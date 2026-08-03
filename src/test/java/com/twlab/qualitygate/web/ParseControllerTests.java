@@ -25,7 +25,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 1")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 2")));
 	}
 
 	@Test
@@ -39,7 +39,8 @@ class ParseControllerTests {
 								"""))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("PASSED")))
-				.andExpect(content().string(containsString("Bundle")));
+				.andExpect(content().string(containsString("Bundle")))
+				.andExpect(content().string(containsString("OperationOutcome issues")));
 	}
 
 	@Test
@@ -60,5 +61,18 @@ class ParseControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("PASSED")))
 				.andExpect(content().string(containsString("Bundle")));
+	}
+
+	@Test
+	void rendersFhirValidationIssue() throws Exception {
+		mockMvc.perform(post("/parse")
+						.param("bundleJson", """
+								{
+								  "resourceType": "Bundle"
+								}
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("FAILED")))
+				.andExpect(content().string(containsString("Bundle.type")));
 	}
 }

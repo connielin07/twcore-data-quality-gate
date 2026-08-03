@@ -1,9 +1,11 @@
 package com.twlab.qualitygate.web;
 
 import com.twlab.qualitygate.validation.BundleParseService;
+import com.twlab.qualitygate.validation.OperationOutcomeIssue;
 import com.twlab.qualitygate.validation.ParseStatus;
 import com.twlab.qualitygate.validation.ValidationResult;
 import java.io.IOException;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -60,6 +62,8 @@ public class ParseController {
 				ParseStatus.FAILED,
 				ParseStatus.FAILED,
 				ParseStatus.FAILED,
+				ParseStatus.NOT_EVALUATED,
+				List.of(new OperationOutcomeIssue("fatal", "N/A", "File read failed before FHIR validation.")),
 				null,
 				null,
 				"File read failed: " + ex.getMessage()
@@ -73,7 +77,7 @@ public class ParseController {
 				  "type": "collection",
 				  "entry": [
 				    {
-				      "fullUrl": "urn:uuid:patient-1",
+				      "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
 				      "resource": {
 				        "resourceType": "Patient",
 				        "id": "patient-1"
