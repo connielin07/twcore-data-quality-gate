@@ -8,11 +8,24 @@ public record ValidationResult(
 		ParseStatus resourceTypeStatus,
 		ParseStatus fhirValidationStatus,
 		List<OperationOutcomeIssue> operationOutcomeIssues,
+		ResourceSummary resourceSummary,
+		List<BundleEntrySummary> bundleEntrySummaries,
 		Integer resourceCount,
 		String resourceType,
 		String errorMessage
 ) {
 	public static ValidationResult empty() {
-		return new ValidationResult(null, null, null, null, List.of(), null, null, null);
+		return new ValidationResult(
+				null,
+				null,
+				null,
+				null,
+				List.of(),
+				ResourceSummary.empty(),
+				List.of(),
+				null,
+				null,
+				null
+		);
 	}
 }

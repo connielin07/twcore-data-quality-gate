@@ -3,6 +3,7 @@ package com.twlab.qualitygate.web;
 import com.twlab.qualitygate.validation.BundleParseService;
 import com.twlab.qualitygate.validation.OperationOutcomeIssue;
 import com.twlab.qualitygate.validation.ParseStatus;
+import com.twlab.qualitygate.validation.ResourceSummary;
 import com.twlab.qualitygate.validation.ValidationResult;
 import java.io.IOException;
 import java.util.List;
@@ -64,6 +65,8 @@ public class ParseController {
 				ParseStatus.FAILED,
 				ParseStatus.NOT_EVALUATED,
 				List.of(new OperationOutcomeIssue("fatal", "N/A", "File read failed before FHIR validation.")),
+				ResourceSummary.empty(),
+				List.of(),
 				null,
 				null,
 				"File read failed: " + ex.getMessage()
@@ -81,6 +84,51 @@ public class ParseController {
 				      "resource": {
 				        "resourceType": "Patient",
 				        "id": "patient-1"
+				      }
+				    },
+				    {
+				      "fullUrl": "urn:uuid:223e4567-e89b-12d3-a456-426614174001",
+				      "resource": {
+				        "resourceType": "Observation",
+				        "id": "obs-1",
+				        "status": "final",
+				        "code": {
+				          "coding": [
+				            {
+				              "system": "http://loinc.org",
+				              "code": "2345-7",
+				              "display": "Glucose [Mass/volume] in Blood"
+				            }
+				          ]
+				        },
+				        "subject": {
+				          "reference": "Patient/patient-1"
+				        },
+				        "valueQuantity": {
+				          "value": 95,
+				          "unit": "mg/dL",
+				          "system": "http://unitsofmeasure.org",
+				          "code": "mg/dL"
+				        }
+				      }
+				    },
+				    {
+				      "fullUrl": "urn:uuid:323e4567-e89b-12d3-a456-426614174002",
+				      "resource": {
+				        "resourceType": "DiagnosticReport",
+				        "id": "report-1",
+				        "status": "final",
+				        "code": {
+				          "text": "Basic lab report"
+				        },
+				        "subject": {
+				          "reference": "Patient/patient-1"
+				        },
+				        "result": [
+				          {
+				            "reference": "Observation/obs-1"
+				          }
+				        ]
 				      }
 				    }
 				  ]

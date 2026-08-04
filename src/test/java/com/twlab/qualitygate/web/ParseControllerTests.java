@@ -25,7 +25,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 2")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 3")));
 	}
 
 	@Test
@@ -40,7 +40,39 @@ class ParseControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("PASSED")))
 				.andExpect(content().string(containsString("Bundle")))
+				.andExpect(content().string(containsString("Resource summary")))
 				.andExpect(content().string(containsString("OperationOutcome issues")));
+	}
+
+	@Test
+	void rendersResourceInventoryForSupportedAndUnsupportedEntries() throws Exception {
+		mockMvc.perform(post("/parse")
+						.param("bundleJson", """
+								{
+								  "resourceType": "Bundle",
+								  "type": "collection",
+								  "entry": [
+								    {
+								      "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+								      "resource": {
+								        "resourceType": "Patient",
+								        "id": "patient-1"
+								      }
+								    },
+								    {
+								      "fullUrl": "urn:uuid:423e4567-e89b-12d3-a456-426614174003",
+								      "resource": {
+								        "resourceType": "Practitioner",
+								        "id": "practitioner-1"
+								      }
+								    }
+								  ]
+								}
+								"""))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("patient-1")))
+				.andExpect(content().string(containsString("practitioner-1")))
+				.andExpect(content().string(containsString("NOT_EVALUATED")));
 	}
 
 	@Test

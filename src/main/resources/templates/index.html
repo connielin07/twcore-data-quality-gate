@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TW Lab Contract Gate - Day 2</title>
+  <title>TW Lab Contract Gate - Day 3</title>
   <style>
     :root {
       color-scheme: light;
@@ -113,6 +113,11 @@
       color: #9b2424;
     }
 
+    .not-evaluated {
+      background: #edf0f4;
+      color: #596273;
+    }
+
     .muted {
       color: #7b8491;
     }
@@ -145,8 +150,8 @@
 </head>
 <body>
 <main>
-  <h1>TW Lab Contract Gate - Day 2</h1>
-  <p class="subtitle">FHIR validation layer：JSON parse、FHIR R4 parse、Resource Type Gate 與 OperationOutcome。</p>
+  <h1>TW Lab Contract Gate - Day 3</h1>
+  <p class="subtitle">FHIR validation layer：JSON parse、FHIR R4 parse、Resource inventory 與 OperationOutcome。</p>
 
   <form method="post" action="/parse" enctype="multipart/form-data">
     <label for="bundleFile">上傳 Bundle JSON</label>
@@ -192,8 +197,8 @@
 
       <dt>TW Core validation</dt>
       <dd>
-        <span class="status" th:text="'NOT_EVALUATED'">NOT_EVALUATED</span>
-        <span class="muted">Day 2 尚未載入 tw.gov.mohw.twcore#1.0.0。</span>
+        <span class="status not-evaluated" th:text="'NOT_EVALUATED'">NOT_EVALUATED</span>
+        <span class="muted">Day 3 尚未載入 tw.gov.mohw.twcore#1.0.0。</span>
       </dd>
 
       <dt>Resource type</dt>
@@ -205,6 +210,47 @@
       <dt>Error message</dt>
       <dd th:text="${result.errorMessage ?: 'N/A'}">N/A</dd>
     </dl>
+
+    <h3>Resource summary</h3>
+    <dl>
+      <dt>Patient</dt>
+      <dd th:text="${result.resourceSummary.patientCount}">1</dd>
+
+      <dt>Observation</dt>
+      <dd th:text="${result.resourceSummary.observationCount}">1</dd>
+
+      <dt>DiagnosticReport</dt>
+      <dd th:text="${result.resourceSummary.diagnosticReportCount}">1</dd>
+
+      <dt>Not evaluated</dt>
+      <dd th:text="${result.resourceSummary.notEvaluatedCount}">0</dd>
+    </dl>
+
+    <p class="muted" th:if="${#lists.isEmpty(result.bundleEntrySummaries)}">
+      沒有可顯示的 Bundle entry，或此層尚未執行。
+    </p>
+    <table th:if="${!#lists.isEmpty(result.bundleEntrySummaries)}">
+      <thead>
+      <tr>
+        <th>Resource type</th>
+        <th>ID</th>
+        <th>Full URL</th>
+        <th>Day 3 status</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="entry : ${result.bundleEntrySummaries}">
+        <td th:text="${entry.resourceType}">Patient</td>
+        <td th:text="${entry.id}">patient-1</td>
+        <td th:text="${entry.fullUrl}">urn:uuid:...</td>
+        <td>
+          <span class="status"
+                th:classappend="${entry.evaluationStatus == 'SUPPORTED'} ? ' passed' : ' not-evaluated'"
+                th:text="${entry.evaluationStatus}">SUPPORTED</span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
 
     <h3>OperationOutcome issues</h3>
     <p class="muted" th:if="${#lists.isEmpty(result.operationOutcomeIssues)}">

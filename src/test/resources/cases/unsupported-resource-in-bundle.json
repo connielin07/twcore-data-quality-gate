@@ -1,0 +1,20 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-1"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:423e4567-e89b-12d3-a456-426614174003",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "practitioner-1"
+      }
+    }
+  ]
+}

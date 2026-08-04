@@ -34,6 +34,8 @@ public class BundleParseService {
 					ParseStatus.FAILED,
 					ParseStatus.NOT_EVALUATED,
 					List.of(),
+					ResourceSummary.empty(),
+					List.of(),
 					null,
 					null,
 					"Input JSON is blank."
@@ -49,6 +51,8 @@ public class BundleParseService {
 					ParseStatus.FAILED,
 					ParseStatus.FAILED,
 					ParseStatus.NOT_EVALUATED,
+					List.of(),
+					ResourceSummary.empty(),
 					List.of(),
 					null,
 					null,
@@ -66,6 +70,8 @@ public class BundleParseService {
 						ParseStatus.FAILED,
 						ParseStatus.NOT_EVALUATED,
 						List.of(),
+						ResourceSummary.empty(),
+						List.of(),
 						null,
 						resourceType,
 						"FHIR R4 parse succeeded, but resourceType is not Bundle."
@@ -76,6 +82,9 @@ public class BundleParseService {
 			List<OperationOutcomeIssue> issues = validationResult.getMessages().stream()
 					.map(this::toIssue)
 					.toList();
+			List<BundleEntrySummary> bundleEntrySummaries = bundle.getEntry().stream()
+					.map(BundleEntrySummary::fromEntry)
+					.toList();
 
 			return new ValidationResult(
 					ParseStatus.PASSED,
@@ -83,6 +92,8 @@ public class BundleParseService {
 					ParseStatus.PASSED,
 					hasErrors(validationResult.getMessages()) ? ParseStatus.FAILED : ParseStatus.PASSED,
 					issues,
+					ResourceSummary.fromEntries(bundleEntrySummaries),
+					bundleEntrySummaries,
 					bundle.getEntry().size(),
 					"Bundle",
 					null
@@ -92,12 +103,14 @@ public class BundleParseService {
 			return new ValidationResult(
 					ParseStatus.PASSED,
 					ParseStatus.FAILED,
-					ParseStatus.FAILED,
-					ParseStatus.NOT_EVALUATED,
-					List.of(),
-					null,
-					resourceType,
-					"FHIR R4 parse failed: " + conciseMessage(ex)
+				ParseStatus.FAILED,
+				ParseStatus.NOT_EVALUATED,
+				List.of(),
+				ResourceSummary.empty(),
+				List.of(),
+				null,
+				resourceType,
+				"FHIR R4 parse failed: " + conciseMessage(ex)
 			);
 		}
 	}
