@@ -17,7 +17,8 @@ class BundleParseServiceTests {
 	private final BundleParseService service = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
-			fhirConfig.fhirValidator(fhirContext)
+			fhirConfig.fhirValidator(fhirContext),
+			new TwCoreValidationService()
 	);
 
 	@Test
@@ -36,6 +37,10 @@ class BundleParseServiceTests {
 		assertThat(result.resourceSummary().observationCount()).isEqualTo(1);
 		assertThat(result.resourceSummary().diagnosticReportCount()).isEqualTo(1);
 		assertThat(result.resourceSummary().notEvaluatedCount()).isZero();
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().packageId()).isEqualTo("tw.gov.mohw.twcore");
+		assertThat(result.twCoreValidationResult().packageVersion()).isEqualTo("1.0.0");
+		assertThat(result.twCoreValidationResult().message()).contains("不冒充 Profile 通過");
 		assertThat(result.errorMessage()).isNull();
 	}
 
@@ -103,6 +108,8 @@ class BundleParseServiceTests {
 		assertThat(result.operationOutcomeIssues()).isEmpty();
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate 尚未通過");
 		assertThat(result.errorMessage()).contains("JSON parse failed");
 	}
 
@@ -122,6 +129,8 @@ class BundleParseServiceTests {
 		assertThat(result.operationOutcomeIssues()).isEmpty();
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate 尚未通過");
 		assertThat(result.resourceType()).isEqualTo("Patient");
 		assertThat(result.errorMessage()).contains("resourceType is not Bundle");
 	}

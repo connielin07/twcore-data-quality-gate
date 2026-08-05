@@ -4,6 +4,7 @@ import com.twlab.qualitygate.validation.BundleParseService;
 import com.twlab.qualitygate.validation.OperationOutcomeIssue;
 import com.twlab.qualitygate.validation.ParseStatus;
 import com.twlab.qualitygate.validation.ResourceSummary;
+import com.twlab.qualitygate.validation.TwCoreValidationResult;
 import com.twlab.qualitygate.validation.ValidationResult;
 import java.io.IOException;
 import java.util.List;
@@ -64,6 +65,7 @@ public class ParseController {
 				ParseStatus.FAILED,
 				ParseStatus.FAILED,
 				ParseStatus.NOT_EVALUATED,
+				TwCoreValidationResult.notEvaluated("TW Core validation 未執行：檔案讀取失敗。"),
 				List.of(new OperationOutcomeIssue("fatal", "N/A", "File read failed before FHIR validation.")),
 				ResourceSummary.empty(),
 				List.of(),

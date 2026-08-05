@@ -19,11 +19,18 @@ public class BundleParseService {
 	private final ObjectMapper objectMapper;
 	private final FhirContext fhirContext;
 	private final FhirValidator fhirValidator;
+	private final TwCoreValidationService twCoreValidationService;
 
-	public BundleParseService(ObjectMapper objectMapper, FhirContext fhirContext, FhirValidator fhirValidator) {
+	public BundleParseService(
+			ObjectMapper objectMapper,
+			FhirContext fhirContext,
+			FhirValidator fhirValidator,
+			TwCoreValidationService twCoreValidationService
+	) {
 		this.objectMapper = objectMapper;
 		this.fhirContext = fhirContext;
 		this.fhirValidator = fhirValidator;
+		this.twCoreValidationService = twCoreValidationService;
 	}
 
 	public ValidationResult parse(String bundleJson) {
@@ -33,6 +40,7 @@ public class BundleParseService {
 					ParseStatus.FAILED,
 					ParseStatus.FAILED,
 					ParseStatus.NOT_EVALUATED,
+					twCoreValidationService.notEvaluatedBeforeBundleGate(),
 					List.of(),
 					ResourceSummary.empty(),
 					List.of(),
@@ -51,6 +59,7 @@ public class BundleParseService {
 					ParseStatus.FAILED,
 					ParseStatus.FAILED,
 					ParseStatus.NOT_EVALUATED,
+					twCoreValidationService.notEvaluatedBeforeBundleGate(),
 					List.of(),
 					ResourceSummary.empty(),
 					List.of(),
@@ -69,6 +78,7 @@ public class BundleParseService {
 						ParseStatus.PASSED,
 						ParseStatus.FAILED,
 						ParseStatus.NOT_EVALUATED,
+						twCoreValidationService.notEvaluatedBeforeBundleGate(),
 						List.of(),
 						ResourceSummary.empty(),
 						List.of(),
@@ -85,12 +95,14 @@ public class BundleParseService {
 			List<BundleEntrySummary> bundleEntrySummaries = bundle.getEntry().stream()
 					.map(BundleEntrySummary::fromEntry)
 					.toList();
+			TwCoreValidationResult twCoreValidationResult = twCoreValidationService.validate(bundle);
 
 			return new ValidationResult(
 					ParseStatus.PASSED,
 					ParseStatus.PASSED,
 					ParseStatus.PASSED,
 					hasErrors(validationResult.getMessages()) ? ParseStatus.FAILED : ParseStatus.PASSED,
+					twCoreValidationResult,
 					issues,
 					ResourceSummary.fromEntries(bundleEntrySummaries),
 					bundleEntrySummaries,
@@ -103,14 +115,15 @@ public class BundleParseService {
 			return new ValidationResult(
 					ParseStatus.PASSED,
 					ParseStatus.FAILED,
-				ParseStatus.FAILED,
-				ParseStatus.NOT_EVALUATED,
-				List.of(),
-				ResourceSummary.empty(),
-				List.of(),
-				null,
-				resourceType,
-				"FHIR R4 parse failed: " + conciseMessage(ex)
+					ParseStatus.FAILED,
+					ParseStatus.NOT_EVALUATED,
+					twCoreValidationService.notEvaluatedBeforeBundleGate(),
+					List.of(),
+					ResourceSummary.empty(),
+					List.of(),
+					null,
+					resourceType,
+					"FHIR R4 parse failed: " + conciseMessage(ex)
 			);
 		}
 	}
