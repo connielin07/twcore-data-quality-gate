@@ -14,11 +14,14 @@ class BundleParseServiceTests {
 
 	private final FhirConfig fhirConfig = new FhirConfig();
 	private final FhirContext fhirContext = FhirContext.forR4Cached();
+	private final CountingTwCorePackageProbe packageProbe = new CountingTwCorePackageProbe(
+			TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。")
+	);
 	private final BundleParseService service = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
 			fhirConfig.fhirValidator(fhirContext),
-			new TwCoreValidationService()
+			new TwCoreValidationService(packageProbe)
 	);
 
 	@Test
@@ -40,7 +43,10 @@ class BundleParseServiceTests {
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
 		assertThat(result.twCoreValidationResult().packageId()).isEqualTo("tw.gov.mohw.twcore");
 		assertThat(result.twCoreValidationResult().packageVersion()).isEqualTo("1.0.0");
-		assertThat(result.twCoreValidationResult().message()).contains("不冒充 Profile 通過");
+		assertThat(result.twCoreValidationResult().message())
+				.contains("package loading probe 成功")
+				.contains("尚未執行正式 TW Core Profile validation")
+				.contains("不冒充 Profile 通過");
 		assertThat(result.errorMessage()).isNull();
 	}
 
@@ -153,6 +159,75 @@ class BundleParseServiceTests {
 		assertThat(result.errorMessage()).contains("FHIR R4 parse failed");
 	}
 
+	@Test
+	void keepsTwCoreNotEvaluatedWhenPackageProbeFails() {
+		BundleParseService failingService = new BundleParseService(
+				new ObjectMapper(),
+				fhirContext,
+				fhirConfig.fhirValidator(fhirContext),
+				new TwCoreValidationService(new CountingTwCorePackageProbe(
+						TwCorePackageProbeResult.failed(
+								"PACKAGE_SOURCE",
+								"TW Core package loading probe 失敗：tw.gov.mohw.twcore#1.0.0 無法穩定載入；分類=PACKAGE_SOURCE；原因=test failure"
+						)
+				))
+		);
+
+		ValidationResult result = failingService.parse(fixture("valid-minimal-lab-bundle.json"));
+
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().message())
+				.contains("PACKAGE_SOURCE")
+				.contains("維持 NOT_EVALUATED")
+				.contains("不冒充 Profile 通過");
+	}
+
+	@Test
+	void onlyRunsTwCorePackageProbeAfterBundleGatePasses() {
+		CountingTwCorePackageProbe countingProbe = new CountingTwCorePackageProbe(
+				TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。")
+		);
+		BundleParseService countingService = new BundleParseService(
+				new ObjectMapper(),
+				fhirContext,
+				fhirConfig.fhirValidator(fhirContext),
+				new TwCoreValidationService(countingProbe)
+		);
+
+		countingService.parse("{ not-json");
+		countingService.parse("""
+				{
+				  "resourceType": "Patient",
+				  "id": "patient-1"
+				}
+				""");
+		countingService.parse(fixture("valid-minimal-lab-bundle.json"));
+		countingService.parse(fixture("valid-minimal-lab-bundle.json"));
+
+		assertThat(countingProbe.callCount()).isEqualTo(1);
+	}
+
+	@Test
+	void parsesReferenceExplorationFixturesForDay5() {
+		for (String fixtureName : new String[] {
+				"valid-internal-reference.json",
+				"missing-internal-reference.json",
+				"external-http-reference.json"
+		}) {
+			ValidationResult result = service.parse(fixture(fixtureName));
+
+			assertThat(result.jsonStatus()).isEqualTo(ParseStatus.PASSED);
+			assertThat(result.fhirR4Status()).isEqualTo(ParseStatus.PASSED);
+			assertThat(result.resourceTypeStatus()).isEqualTo(ParseStatus.PASSED);
+			assertThat(result.resourceSummary().patientCount()).isEqualTo(1);
+			assertThat(result.resourceSummary().observationCount()).isEqualTo(1);
+			assertThat(result.resourceSummary().diagnosticReportCount()).isEqualTo(1);
+			assertThat(result.bundleEntrySummaries())
+					.extracting(BundleEntrySummary::evaluationStatus)
+					.containsExactly("SUPPORTED", "SUPPORTED", "SUPPORTED");
+		}
+	}
+
 	private String fixture(String name) {
 		try (var input = getClass().getResourceAsStream("/cases/" + name)) {
 			if (input == null) {
@@ -161,6 +236,26 @@ class BundleParseServiceTests {
 			return new String(input.readAllBytes(), StandardCharsets.UTF_8);
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
+		}
+	}
+
+	private static class CountingTwCorePackageProbe implements TwCorePackageProbe {
+
+		private final TwCorePackageProbeResult result;
+		private int callCount;
+
+		CountingTwCorePackageProbe(TwCorePackageProbeResult result) {
+			this.result = result;
+		}
+
+		@Override
+		public TwCorePackageProbeResult probe() {
+			callCount++;
+			return result;
+		}
+
+		int callCount() {
+			return callCount;
 		}
 	}
 }

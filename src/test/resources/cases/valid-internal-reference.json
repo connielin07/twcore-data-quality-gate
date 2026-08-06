@@ -1,0 +1,58 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:423e4567-e89b-12d3-a456-426614174010",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-valid-ref"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:523e4567-e89b-12d3-a456-426614174011",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-valid-ref",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2345-7",
+              "display": "Glucose [Mass/volume] in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-valid-ref"
+        },
+        "valueQuantity": {
+          "value": 95,
+          "unit": "mg/dL",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg/dL"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:623e4567-e89b-12d3-a456-426614174012",
+      "resource": {
+        "resourceType": "DiagnosticReport",
+        "id": "report-valid-ref",
+        "status": "final",
+        "code": {
+          "text": "Basic lab report"
+        },
+        "subject": {
+          "reference": "Patient/patient-valid-ref"
+        },
+        "result": [
+          {
+            "reference": "Observation/obs-valid-ref"
+          }
+        ]
+      }
+    }
+  ]
+}

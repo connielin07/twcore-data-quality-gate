@@ -25,7 +25,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 4")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 5")));
 	}
 
 	@Test
