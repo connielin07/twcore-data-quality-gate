@@ -8,6 +8,7 @@ import com.twlab.qualitygate.config.FhirConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class BundleParseServiceTests {
@@ -17,11 +18,14 @@ class BundleParseServiceTests {
 	private final CountingTwCorePackageProbe packageProbe = new CountingTwCorePackageProbe(
 			TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。")
 	);
+	private final StubTwCoreProfileValidator profileValidator = new StubTwCoreProfileValidator(
+			TwCoreProfileValidationResult.passed("Day 6 test profile validation passed。", List.of())
+	);
 	private final BundleParseService service = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
 			fhirConfig.fhirValidator(fhirContext),
-			new TwCoreValidationService(packageProbe)
+			new TwCoreValidationService(packageProbe, profileValidator)
 	);
 
 	@Test
@@ -40,13 +44,13 @@ class BundleParseServiceTests {
 		assertThat(result.resourceSummary().observationCount()).isEqualTo(1);
 		assertThat(result.resourceSummary().diagnosticReportCount()).isEqualTo(1);
 		assertThat(result.resourceSummary().notEvaluatedCount()).isZero();
-		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.PASSED);
 		assertThat(result.twCoreValidationResult().packageId()).isEqualTo("tw.gov.mohw.twcore");
 		assertThat(result.twCoreValidationResult().packageVersion()).isEqualTo("1.0.0");
 		assertThat(result.twCoreValidationResult().message())
 				.contains("package loading probe 成功")
-				.contains("尚未執行正式 TW Core Profile validation")
-				.contains("不冒充 Profile 通過");
+				.contains("Day 6 test profile validation passed");
+		assertThat(result.twCoreValidationResult().operationOutcomeIssues()).isEmpty();
 		assertThat(result.errorMessage()).isNull();
 	}
 
@@ -170,7 +174,7 @@ class BundleParseServiceTests {
 								"PACKAGE_SOURCE",
 								"TW Core package loading probe 失敗：tw.gov.mohw.twcore#1.0.0 無法穩定載入；分類=PACKAGE_SOURCE；原因=test failure"
 						)
-				))
+				), profileValidator)
 		);
 
 		ValidationResult result = failingService.parse(fixture("valid-minimal-lab-bundle.json"));
@@ -191,7 +195,7 @@ class BundleParseServiceTests {
 				new ObjectMapper(),
 				fhirContext,
 				fhirConfig.fhirValidator(fhirContext),
-				new TwCoreValidationService(countingProbe)
+				new TwCoreValidationService(countingProbe, profileValidator)
 		);
 
 		countingService.parse("{ not-json");
@@ -205,6 +209,55 @@ class BundleParseServiceTests {
 		countingService.parse(fixture("valid-minimal-lab-bundle.json"));
 
 		assertThat(countingProbe.callCount()).isEqualTo(1);
+		assertThat(profileValidator.callCount()).isEqualTo(2);
+	}
+
+	@Test
+	void keepsTwCoreNotEvaluatedWhenProfileValidatorCannotRun() {
+		BundleParseService notEvaluatedService = new BundleParseService(
+				new ObjectMapper(),
+				fhirContext,
+				fhirConfig.fhirValidator(fhirContext),
+				new TwCoreValidationService(packageProbe, new StubTwCoreProfileValidator(
+						TwCoreProfileValidationResult.notEvaluated(
+								"Day 6 TW Core Profile validation spike 無法穩定執行；分類=VALIDATION_SUPPORT_CONFIG；原因=test failure。因此 TW Core validation 維持 NOT_EVALUATED，不冒充 Profile 通過。",
+								List.of()
+						)
+				))
+		);
+
+		ValidationResult result = notEvaluatedService.parse(fixture("valid-minimal-lab-bundle.json"));
+
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
+		assertThat(result.twCoreValidationResult().message())
+				.contains("VALIDATION_SUPPORT_CONFIG")
+				.contains("維持 NOT_EVALUATED")
+				.contains("不冒充 Profile 通過");
+	}
+
+	@Test
+	void marksTwCoreFailedWhenProfileValidationReturnsError() {
+		OperationOutcomeIssue issue = new OperationOutcomeIssue(
+				"error",
+				"Patient/patient-1: Patient.identifier",
+				"Test profile validation error."
+		);
+		BundleParseService failingProfileService = new BundleParseService(
+				new ObjectMapper(),
+				fhirContext,
+				fhirConfig.fhirValidator(fhirContext),
+				new TwCoreValidationService(packageProbe, new StubTwCoreProfileValidator(
+						TwCoreProfileValidationResult.failed(
+								"Day 6 已執行最小 TW Core Profile validation；存在 error/fatal issue。",
+								List.of(issue)
+						)
+				))
+		);
+
+		ValidationResult result = failingProfileService.parse(fixture("valid-minimal-lab-bundle.json"));
+
+		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.FAILED);
+		assertThat(result.twCoreValidationResult().operationOutcomeIssues()).containsExactly(issue);
 	}
 
 	@Test
@@ -250,6 +303,26 @@ class BundleParseServiceTests {
 
 		@Override
 		public TwCorePackageProbeResult probe() {
+			callCount++;
+			return result;
+		}
+
+		int callCount() {
+			return callCount;
+		}
+	}
+
+	private static class StubTwCoreProfileValidator implements TwCoreProfileValidator {
+
+		private final TwCoreProfileValidationResult result;
+		private int callCount;
+
+		StubTwCoreProfileValidator(TwCoreProfileValidationResult result) {
+			this.result = result;
+		}
+
+		@Override
+		public TwCoreProfileValidationResult validate(org.hl7.fhir.r4.model.Bundle bundle) {
 			callCount++;
 			return result;
 		}
