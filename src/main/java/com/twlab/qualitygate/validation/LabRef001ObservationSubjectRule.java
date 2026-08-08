@@ -1,0 +1,122 @@
+package com.twlab.qualitygate.validation;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Observation;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Resource;
+
+public class LabRef001ObservationSubjectRule implements ContractRule {
+
+	public static final String RULE_CODE = "LAB-REF-001";
+
+	@Override
+	public String ruleCode() {
+		return RULE_CODE;
+	}
+
+	@Override
+	public List<RuleResult> validate(Bundle bundle) {
+		List<Observation> observations = bundle.getEntry().stream()
+				.map(Bundle.BundleEntryComponent::getResource)
+				.filter(Observation.class::isInstance)
+				.map(Observation.class::cast)
+				.toList();
+		if (observations.isEmpty()) {
+			return List.of(notApplicable());
+		}
+
+		Set<String> patientReferences = collectPatientReferences(bundle);
+		return observations.stream()
+				.map(observation -> validateObservation(observation, patientReferences))
+				.toList();
+	}
+
+	private Set<String> collectPatientReferences(Bundle bundle) {
+		Set<String> patientReferences = new HashSet<>();
+		for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+			Resource resource = entry.getResource();
+			if (resource instanceof Patient patient) {
+				String id = patient.getIdElement().getIdPart();
+				if (id != null && !id.isBlank()) {
+					patientReferences.add("Patient/" + id);
+				}
+				String fullUrl = entry.getFullUrl();
+				if (fullUrl != null && !fullUrl.isBlank()) {
+					patientReferences.add(fullUrl);
+				}
+			}
+		}
+		return patientReferences;
+	}
+
+	private RuleResult validateObservation(Observation observation, Set<String> patientReferences) {
+		String actual = observation.hasSubject() ? observation.getSubject().getReference() : null;
+		String path = "Observation/" + idOrUnknown(observation) + ".subject.reference";
+		if (actual == null || actual.isBlank()) {
+			return fail(path, "N/A", "Observation.subject.reference is required for LAB-REF-001.");
+		}
+		if (isExternalReference(actual)) {
+			return new RuleResult(
+					RULE_CODE,
+					RuleOutcome.NOT_EVALUATED,
+					"warning",
+					path,
+					actual,
+					"Bundle-local Patient reference using Patient/{id} or entry.fullUrl.",
+					"External HTTP references are outside the MVP reference resolver boundary.",
+					"請改用 Bundle 內 Patient reference，或在後續版本接上外部 FHIR Server 查詢。"
+			);
+		}
+		if (patientReferences.contains(actual)) {
+			return new RuleResult(
+					RULE_CODE,
+					RuleOutcome.PASS,
+					"information",
+					path,
+					actual,
+					"Observation.subject points to a Patient in the same Bundle.",
+					"Matched Bundle Patient by logical reference or fullUrl.",
+					"無需修正。"
+			);
+		}
+		return fail(path, actual, "Observation.subject.reference does not match any Patient in this Bundle.");
+	}
+
+	private boolean isExternalReference(String reference) {
+		return reference.startsWith("http://") || reference.startsWith("https://");
+	}
+
+	private RuleResult fail(String path, String actual, String evidence) {
+		return new RuleResult(
+				RULE_CODE,
+				RuleOutcome.FAIL,
+				"error",
+				path,
+				actual,
+				"Observation.subject must point to a Patient in the same Bundle.",
+				evidence,
+				"請確認 Observation.subject.reference 指向 Bundle.entry 內存在的 Patient。"
+		);
+	}
+
+	private RuleResult notApplicable() {
+		return new RuleResult(
+				RULE_CODE,
+				RuleOutcome.NOT_APPLICABLE,
+				"information",
+				"Bundle.entry",
+				"N/A",
+				"At least one Observation is required to evaluate LAB-REF-001.",
+				"No Observation resource found in this Bundle.",
+				"無需修正；此規則不適用。"
+		);
+	}
+
+	private String idOrUnknown(Observation observation) {
+		String id = observation.getIdElement().getIdPart();
+		return id == null || id.isBlank() ? "UNKNOWN" : id;
+	}
+}
