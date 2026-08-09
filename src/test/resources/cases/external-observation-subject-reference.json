@@ -1,0 +1,58 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:e23e4567-e89b-12d3-a456-426614174040",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-report"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f23e4567-e89b-12d3-a456-426614174041",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-external-subject",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2345-7",
+              "display": "Glucose [Mass/volume] in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "https://example.org/fhir/Patient/external-patient"
+        },
+        "valueQuantity": {
+          "value": 95,
+          "unit": "mg/dL",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg/dL"
+        }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:023e4567-e89b-12d3-a456-426614174042",
+      "resource": {
+        "resourceType": "DiagnosticReport",
+        "id": "report-external-observation-subject",
+        "status": "final",
+        "code": {
+          "text": "Basic lab report"
+        },
+        "subject": {
+          "reference": "Patient/patient-report"
+        },
+        "result": [
+          {
+            "reference": "Observation/obs-external-subject"
+          }
+        ]
+      }
+    }
+  ]
+}
