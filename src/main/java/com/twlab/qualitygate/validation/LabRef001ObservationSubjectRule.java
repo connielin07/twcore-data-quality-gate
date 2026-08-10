@@ -1,12 +1,10 @@
 package com.twlab.qualitygate.validation;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Resource;
 
 public class LabRef001ObservationSubjectRule implements ContractRule {
 
@@ -28,28 +26,10 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 			return List.of(notApplicable());
 		}
 
-		Set<String> patientReferences = collectPatientReferences(bundle);
+		Set<String> patientReferences = BundleReferenceIndex.referencesTo(bundle, Patient.class, "Patient");
 		return observations.stream()
 				.map(observation -> validateObservation(observation, patientReferences))
 				.toList();
-	}
-
-	private Set<String> collectPatientReferences(Bundle bundle) {
-		Set<String> patientReferences = new HashSet<>();
-		for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-			Resource resource = entry.getResource();
-			if (resource instanceof Patient patient) {
-				String id = patient.getIdElement().getIdPart();
-				if (id != null && !id.isBlank()) {
-					patientReferences.add("Patient/" + id);
-				}
-				String fullUrl = entry.getFullUrl();
-				if (fullUrl != null && !fullUrl.isBlank()) {
-					patientReferences.add(fullUrl);
-				}
-			}
-		}
-		return patientReferences;
 	}
 
 	private RuleResult validateObservation(Observation observation, Set<String> patientReferences) {
@@ -58,7 +38,7 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 		if (actual == null || actual.isBlank()) {
 			return fail(path, "N/A", "Observation.subject.reference is required for LAB-REF-001.");
 		}
-		if (isExternalReference(actual)) {
+		if (BundleReferenceIndex.isExternalReference(actual)) {
 			return new RuleResult(
 					RULE_CODE,
 					RuleOutcome.NOT_EVALUATED,
@@ -83,10 +63,6 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 			);
 		}
 		return fail(path, actual, "Observation.subject.reference does not match any Patient in this Bundle.");
-	}
-
-	private boolean isExternalReference(String reference) {
-		return reference.startsWith("http://") || reference.startsWith("https://");
 	}
 
 	private RuleResult fail(String path, String actual, String evidence) {
@@ -116,7 +92,6 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 	}
 
 	private String idOrUnknown(Observation observation) {
-		String id = observation.getIdElement().getIdPart();
-		return id == null || id.isBlank() ? "UNKNOWN" : id;
+		return BundleReferenceIndex.idOrUnknown(observation);
 	}
 }

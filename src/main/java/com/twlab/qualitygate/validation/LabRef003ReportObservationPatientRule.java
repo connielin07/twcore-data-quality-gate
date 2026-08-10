@@ -1,14 +1,12 @@
 package com.twlab.qualitygate.validation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Resource;
 
 public class LabRef003ReportObservationPatientRule implements ContractRule {
 
@@ -30,51 +28,13 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 			return List.of(notApplicable());
 		}
 
-		Map<String, Observation> observationsByReference = collectObservationsByReference(bundle);
-		Map<String, String> patientReferenceAliases = collectPatientReferenceAliases(bundle);
+		Map<String, Observation> observationsByReference = BundleReferenceIndex.observationsByReference(bundle);
+		Map<String, String> patientReferenceAliases = BundleReferenceIndex.patientReferenceAliases(bundle);
 		List<RuleResult> results = new ArrayList<>();
 		for (DiagnosticReport report : reports) {
 			results.addAll(validateReport(report, observationsByReference, patientReferenceAliases));
 		}
 		return results;
-	}
-
-	private Map<String, Observation> collectObservationsByReference(Bundle bundle) {
-		Map<String, Observation> observationsByReference = new HashMap<>();
-		for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-			Resource resource = entry.getResource();
-			if (resource instanceof Observation observation) {
-				String id = observation.getIdElement().getIdPart();
-				if (id != null && !id.isBlank()) {
-					observationsByReference.put("Observation/" + id, observation);
-				}
-				String fullUrl = entry.getFullUrl();
-				if (fullUrl != null && !fullUrl.isBlank()) {
-					observationsByReference.put(fullUrl, observation);
-				}
-			}
-		}
-		return observationsByReference;
-	}
-
-	private Map<String, String> collectPatientReferenceAliases(Bundle bundle) {
-		Map<String, String> patientReferenceAliases = new HashMap<>();
-		for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-			Resource resource = entry.getResource();
-			if (resource != null && "Patient".equals(resource.fhirType())) {
-				String id = resource.getIdElement().getIdPart();
-				String canonical = id == null || id.isBlank() ? entry.getFullUrl() : "Patient/" + id;
-				if (canonical == null || canonical.isBlank()) {
-					continue;
-				}
-				patientReferenceAliases.put(canonical, canonical);
-				String fullUrl = entry.getFullUrl();
-				if (fullUrl != null && !fullUrl.isBlank()) {
-					patientReferenceAliases.put(fullUrl, canonical);
-				}
-			}
-		}
-		return patientReferenceAliases;
 	}
 
 	private List<RuleResult> validateReport(
@@ -91,7 +51,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 					"DiagnosticReport.subject.reference is required for LAB-REF-003."
 			));
 		}
-		if (isExternalReference(reportSubject)) {
+		if (BundleReferenceIndex.isExternalReference(reportSubject)) {
 			return List.of(notEvaluated(
 					reportSubjectPath,
 					reportSubject,
@@ -129,7 +89,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 		if (observationReference == null || observationReference.isBlank()) {
 			return fail(path, "N/A", "DiagnosticReport.result.reference is required for LAB-REF-003.");
 		}
-		if (isExternalReference(observationReference)) {
+		if (BundleReferenceIndex.isExternalReference(observationReference)) {
 			return notEvaluated(
 					path,
 					observationReference,
@@ -146,7 +106,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 		if (observationSubject == null || observationSubject.isBlank()) {
 			return fail(path, actual(reportSubject, "N/A"), "Referenced Observation.subject.reference is required for LAB-REF-003.");
 		}
-		if (isExternalReference(observationSubject)) {
+		if (BundleReferenceIndex.isExternalReference(observationSubject)) {
 			return notEvaluated(
 					path,
 					observationSubject,
@@ -175,10 +135,6 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 				actual,
 				"DiagnosticReport.subject and referenced Observation.subject point to different Patients."
 		);
-	}
-
-	private boolean isExternalReference(String reference) {
-		return reference.startsWith("http://") || reference.startsWith("https://");
 	}
 
 	private RuleResult fail(String path, String actual, String evidence) {
@@ -225,7 +181,6 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 	}
 
 	private String idOrUnknown(DiagnosticReport report) {
-		String id = report.getIdElement().getIdPart();
-		return id == null || id.isBlank() ? "UNKNOWN" : id;
+		return BundleReferenceIndex.idOrUnknown(report);
 	}
 }
