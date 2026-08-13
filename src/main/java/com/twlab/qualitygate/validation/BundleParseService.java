@@ -8,7 +8,9 @@ import ca.uhn.fhir.validation.SingleValidationMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
 import org.springframework.stereotype.Service;
@@ -20,17 +22,22 @@ public class BundleParseService {
 	private final FhirContext fhirContext;
 	private final FhirValidator fhirValidator;
 	private final TwCoreValidationService twCoreValidationService;
+	private final List<ContractRule> contractRules;
 
 	public BundleParseService(
 			ObjectMapper objectMapper,
 			FhirContext fhirContext,
 			FhirValidator fhirValidator,
-			TwCoreValidationService twCoreValidationService
+			TwCoreValidationService twCoreValidationService,
+			List<ContractRule> contractRules
 	) {
 		this.objectMapper = objectMapper;
 		this.fhirContext = fhirContext;
 		this.fhirValidator = fhirValidator;
 		this.twCoreValidationService = twCoreValidationService;
+		this.contractRules = contractRules.stream()
+				.sorted(Comparator.comparingInt(rule -> ruleOrder().getOrDefault(rule.ruleCode(), Integer.MAX_VALUE)))
+				.toList();
 	}
 
 	public ValidationResult parse(String bundleJson) {
@@ -96,14 +103,27 @@ public class BundleParseService {
 					.map(BundleEntrySummary::fromEntry)
 					.toList();
 			TwCoreValidationResult twCoreValidationResult = twCoreValidationService.validate(bundle);
+			List<RuleResult> contractRuleResults = validateContractRules(bundle);
+			ParseStatus fhirValidationStatus = hasErrors(validationResult.getMessages())
+					? ParseStatus.FAILED
+					: ParseStatus.PASSED;
 
 			return new ValidationResult(
 					ParseStatus.PASSED,
 					ParseStatus.PASSED,
 					ParseStatus.PASSED,
-					hasErrors(validationResult.getMessages()) ? ParseStatus.FAILED : ParseStatus.PASSED,
+					fhirValidationStatus,
 					twCoreValidationResult,
+					gateOutcome(
+							ParseStatus.PASSED,
+							ParseStatus.PASSED,
+							ParseStatus.PASSED,
+							fhirValidationStatus,
+							twCoreValidationResult,
+							contractRuleResults
+					),
 					issues,
+					contractRuleResults,
 					ResourceSummary.fromEntries(bundleEntrySummaries),
 					bundleEntrySummaries,
 					bundle.getEntry().size(),
@@ -126,6 +146,46 @@ public class BundleParseService {
 					"FHIR R4 parse failed: " + conciseMessage(ex)
 			);
 		}
+	}
+
+	private List<RuleResult> validateContractRules(Bundle bundle) {
+		return contractRules.stream()
+				.flatMap(rule -> rule.validate(bundle).stream())
+				.toList();
+	}
+
+	private GateOutcome gateOutcome(
+			ParseStatus jsonStatus,
+			ParseStatus fhirR4Status,
+			ParseStatus resourceTypeStatus,
+			ParseStatus fhirValidationStatus,
+			TwCoreValidationResult twCoreValidationResult,
+			List<RuleResult> contractRuleResults
+	) {
+		if (jsonStatus == ParseStatus.FAILED
+				|| fhirR4Status == ParseStatus.FAILED
+				|| resourceTypeStatus == ParseStatus.FAILED
+				|| fhirValidationStatus == ParseStatus.FAILED
+				|| twCoreValidationResult.status() == ParseStatus.FAILED
+				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.FAIL)) {
+			return GateOutcome.BLOCKED;
+		}
+		if (twCoreValidationResult.status() == ParseStatus.NOT_EVALUATED
+				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.NOT_EVALUATED)) {
+			return GateOutcome.PASS_WITH_WARNINGS;
+		}
+		return GateOutcome.PASSED;
+	}
+
+	private Map<String, Integer> ruleOrder() {
+		return Map.of(
+				LabRef001ObservationSubjectRule.RULE_CODE, 1,
+				LabRef002DiagnosticReportResultRule.RULE_CODE, 2,
+				LabRef003ReportObservationPatientRule.RULE_CODE, 3,
+				LabCode001ObservationLoincRule.RULE_CODE, 4,
+				LabUnit001ObservationQuantityUnitRule.RULE_CODE, 5,
+				LabUnit002ObservationUcumCodeRule.RULE_CODE, 6
+		);
 	}
 
 	private boolean hasErrors(List<SingleValidationMessage> messages) {

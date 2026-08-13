@@ -25,7 +25,8 @@ class BundleParseServiceTests {
 			new ObjectMapper(),
 			fhirContext,
 			fhirConfig.fhirValidator(fhirContext),
-			new TwCoreValidationService(packageProbe, profileValidator)
+			new TwCoreValidationService(packageProbe, profileValidator),
+			contractRules()
 	);
 
 	@Test
@@ -51,7 +52,45 @@ class BundleParseServiceTests {
 				.contains("package loading probe 成功")
 				.contains("Day 6 test profile validation passed");
 		assertThat(result.twCoreValidationResult().operationOutcomeIssues()).isEmpty();
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.PASSED);
+		assertThat(result.contractRuleResults())
+				.extracting(RuleResult::ruleCode)
+				.containsExactly(
+						LabRef001ObservationSubjectRule.RULE_CODE,
+						LabRef002DiagnosticReportResultRule.RULE_CODE,
+						LabRef003ReportObservationPatientRule.RULE_CODE,
+						LabCode001ObservationLoincRule.RULE_CODE,
+						LabUnit001ObservationQuantityUnitRule.RULE_CODE,
+						LabUnit002ObservationUcumCodeRule.RULE_CODE
+				);
+		assertThat(result.contractRuleResults())
+				.extracting(RuleResult::outcome)
+				.containsOnly(RuleOutcome.PASS);
 		assertThat(result.errorMessage()).isNull();
+	}
+
+	@Test
+	void blocksGateWhenContractReferenceRuleFails() {
+		ValidationResult result = service.parse(fixture("missing-internal-reference.json"));
+
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.BLOCKED);
+		assertThat(result.contractRuleResults())
+				.anySatisfy(ruleResult -> {
+					assertThat(ruleResult.ruleCode()).isEqualTo(LabRef001ObservationSubjectRule.RULE_CODE);
+					assertThat(ruleResult.outcome()).isEqualTo(RuleOutcome.FAIL);
+				});
+	}
+
+	@Test
+	void blocksGateWhenUcumContractRuleFails() {
+		ValidationResult result = service.parse(fixture("observation-quantity-wrong-ucum-system.json"));
+
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.BLOCKED);
+		assertThat(result.contractRuleResults())
+				.anySatisfy(ruleResult -> {
+					assertThat(ruleResult.ruleCode()).isEqualTo(LabUnit002ObservationUcumCodeRule.RULE_CODE);
+					assertThat(ruleResult.outcome()).isEqualTo(RuleOutcome.FAIL);
+				});
 	}
 
 	@Test
@@ -116,6 +155,8 @@ class BundleParseServiceTests {
 		assertThat(result.resourceTypeStatus()).isEqualTo(ParseStatus.FAILED);
 		assertThat(result.fhirValidationStatus()).isEqualTo(ParseStatus.NOT_EVALUATED);
 		assertThat(result.operationOutcomeIssues()).isEmpty();
+		assertThat(result.contractRuleResults()).isEmpty();
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.BLOCKED);
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
@@ -137,6 +178,8 @@ class BundleParseServiceTests {
 		assertThat(result.resourceTypeStatus()).isEqualTo(ParseStatus.FAILED);
 		assertThat(result.fhirValidationStatus()).isEqualTo(ParseStatus.NOT_EVALUATED);
 		assertThat(result.operationOutcomeIssues()).isEmpty();
+		assertThat(result.contractRuleResults()).isEmpty();
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.BLOCKED);
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
@@ -174,7 +217,8 @@ class BundleParseServiceTests {
 								"PACKAGE_SOURCE",
 								"TW Core package loading probe 失敗：tw.gov.mohw.twcore#1.0.0 無法穩定載入；分類=PACKAGE_SOURCE；原因=test failure"
 						)
-				), profileValidator)
+				), profileValidator),
+				contractRules()
 		);
 
 		ValidationResult result = failingService.parse(fixture("valid-minimal-lab-bundle.json"));
@@ -184,6 +228,7 @@ class BundleParseServiceTests {
 				.contains("PACKAGE_SOURCE")
 				.contains("維持 NOT_EVALUATED")
 				.contains("不冒充 Profile 通過");
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.PASS_WITH_WARNINGS);
 	}
 
 	@Test
@@ -195,7 +240,8 @@ class BundleParseServiceTests {
 				new ObjectMapper(),
 				fhirContext,
 				fhirConfig.fhirValidator(fhirContext),
-				new TwCoreValidationService(countingProbe, profileValidator)
+				new TwCoreValidationService(countingProbe, profileValidator),
+				contractRules()
 		);
 
 		countingService.parse("{ not-json");
@@ -223,7 +269,8 @@ class BundleParseServiceTests {
 								"Day 6 TW Core Profile validation spike 無法穩定執行；分類=VALIDATION_SUPPORT_CONFIG；原因=test failure。因此 TW Core validation 維持 NOT_EVALUATED，不冒充 Profile 通過。",
 								List.of()
 						)
-				))
+				)),
+				contractRules()
 		);
 
 		ValidationResult result = notEvaluatedService.parse(fixture("valid-minimal-lab-bundle.json"));
@@ -251,13 +298,15 @@ class BundleParseServiceTests {
 								"Day 6 已執行最小 TW Core Profile validation；存在 error/fatal issue。",
 								List.of(issue)
 						)
-				))
+				)),
+				contractRules()
 		);
 
 		ValidationResult result = failingProfileService.parse(fixture("valid-minimal-lab-bundle.json"));
 
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.FAILED);
 		assertThat(result.twCoreValidationResult().operationOutcomeIssues()).containsExactly(issue);
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.BLOCKED);
 	}
 
 	@Test
@@ -290,6 +339,17 @@ class BundleParseServiceTests {
 		} catch (IOException ex) {
 			throw new UncheckedIOException(ex);
 		}
+	}
+
+	private List<ContractRule> contractRules() {
+		return List.of(
+				new LabRef001ObservationSubjectRule(),
+				new LabRef002DiagnosticReportResultRule(),
+				new LabRef003ReportObservationPatientRule(),
+				new LabCode001ObservationLoincRule(),
+				new LabUnit001ObservationQuantityUnitRule(),
+				new LabUnit002ObservationUcumCodeRule()
+		);
 	}
 
 	private static class CountingTwCorePackageProbe implements TwCorePackageProbe {

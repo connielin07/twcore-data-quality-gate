@@ -5,7 +5,9 @@ import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Observation;
+import org.springframework.stereotype.Component;
 
+@Component
 public class LabCode001ObservationLoincRule implements ContractRule {
 
 	public static final String RULE_CODE = "LAB-CODE-001";

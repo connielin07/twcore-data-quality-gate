@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TW Lab Contract Gate - Day 7</title>
+  <title>TW Lab Contract Gate - Day 13</title>
   <style>
     :root {
       color-scheme: light;
@@ -118,6 +118,11 @@
       color: #596273;
     }
 
+    .warning {
+      background: #fff3cd;
+      color: #7a4d00;
+    }
+
     .muted {
       color: #7b8491;
     }
@@ -150,8 +155,8 @@
 </head>
 <body>
 <main>
-  <h1>TW Lab Contract Gate - Day 7</h1>
-  <p class="subtitle">FHIR validation layer：JSON parse、FHIR R4 parse、Resource inventory、OperationOutcome 與最小 TW Core Profile validation spike。</p>
+  <h1>TW Lab Contract Gate - Day 13</h1>
+  <p class="subtitle">四層驗證核心：JSON parse、FHIR R4、TW Core 安全降級、六條交換契約規則與最小 Quality Gate。</p>
 
   <form method="post" action="/parse" enctype="multipart/form-data">
     <label for="bundleFile">上傳 Bundle JSON</label>
@@ -167,6 +172,13 @@
   <section class="result" th:if="${result.jsonStatus != null}">
     <h2>解析結果</h2>
     <dl>
+      <dt>Quality Gate</dt>
+      <dd>
+        <span class="status"
+              th:classappend="${result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
+              th:text="${result.gateOutcome}">BLOCKED</span>
+      </dd>
+
       <dt>JSON parse</dt>
       <dd>
         <span class="status"
@@ -299,6 +311,41 @@
         <td th:text="${issue.severity}">error</td>
         <td th:text="${issue.location}">Patient/patient-1</td>
         <td th:text="${issue.diagnostics}">Required element is missing.</td>
+      </tr>
+      </tbody>
+    </table>
+
+    <h3>Exchange contract rule results</h3>
+    <p class="muted" th:if="${#lists.isEmpty(result.contractRuleResults)}">
+      交換契約規則尚未執行；通常代表 JSON/FHIR parse 失敗或輸入不是 Bundle。
+    </p>
+    <table th:if="${!#lists.isEmpty(result.contractRuleResults)}">
+      <thead>
+      <tr>
+        <th>Rule code</th>
+        <th>Outcome</th>
+        <th>Severity</th>
+        <th>Path</th>
+        <th>Actual</th>
+        <th>Expected</th>
+        <th>Evidence</th>
+        <th>Suggestion</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="ruleResult : ${result.contractRuleResults}">
+        <td th:text="${ruleResult.ruleCode}">LAB-REF-001</td>
+        <td>
+          <span class="status"
+                th:classappend="${ruleResult.outcome.name() == 'PASS'} ? ' passed' : (${ruleResult.outcome.name() == 'FAIL'} ? ' failed' : (${ruleResult.outcome.name() == 'NOT_EVALUATED'} ? ' warning' : ' not-evaluated'))"
+                th:text="${ruleResult.outcome}">PASS</span>
+        </td>
+        <td th:text="${ruleResult.severity}">information</td>
+        <td th:text="${ruleResult.path}">Observation/obs-1.subject.reference</td>
+        <td th:text="${ruleResult.actual}">Patient/patient-1</td>
+        <td th:text="${ruleResult.expected}">Expected condition</td>
+        <td th:text="${ruleResult.evidence}">Evidence</td>
+        <td th:text="${ruleResult.suggestion}">Suggestion</td>
       </tr>
       </tbody>
     </table>

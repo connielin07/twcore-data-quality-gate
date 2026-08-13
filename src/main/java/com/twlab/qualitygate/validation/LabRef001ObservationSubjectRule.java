@@ -5,7 +5,9 @@ import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
+import org.springframework.stereotype.Component;
 
+@Component
 public class LabRef001ObservationSubjectRule implements ContractRule {
 
 	public static final String RULE_CODE = "LAB-REF-001";

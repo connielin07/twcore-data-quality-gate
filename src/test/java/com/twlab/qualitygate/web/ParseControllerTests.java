@@ -25,7 +25,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 7")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 13")));
 	}
 
 	@Test
@@ -43,7 +43,11 @@ class ParseControllerTests {
 				.andExpect(content().string(containsString("tw.gov.mohw.twcore#1.0.0")))
 				.andExpect(content().string(containsString("Resource summary")))
 				.andExpect(content().string(containsString("OperationOutcome issues")))
-				.andExpect(content().string(containsString("TW Core Profile issues")));
+				.andExpect(content().string(containsString("TW Core Profile issues")))
+				.andExpect(content().string(containsString("Quality Gate")))
+				.andExpect(content().string(containsString("Exchange contract rule results")))
+				.andExpect(content().string(containsString("LAB-REF-001")))
+				.andExpect(content().string(containsString("LAB-UNIT-002")));
 	}
 
 	@Test

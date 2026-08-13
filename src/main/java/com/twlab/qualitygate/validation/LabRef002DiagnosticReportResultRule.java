@@ -7,7 +7,9 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
+import org.springframework.stereotype.Component;
 
+@Component
 public class LabRef002DiagnosticReportResultRule implements ContractRule {
 
 	public static final String RULE_CODE = "LAB-REF-002";

@@ -1,6 +1,7 @@
 package com.twlab.qualitygate.validation;
 
 import java.util.List;
+import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Quantity;
@@ -8,10 +9,12 @@ import org.hl7.fhir.r4.model.Type;
 import org.springframework.stereotype.Component;
 
 @Component
-public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
+public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 
-	public static final String RULE_CODE = "LAB-UNIT-001";
-	private static final String EXPECTED = "Observation.valueQuantity.unit must be present when value[x] is Quantity.";
+	public static final String RULE_CODE = "LAB-UNIT-002";
+	private static final String UCUM_SYSTEM = "http://unitsofmeasure.org";
+	private static final Set<String> ALLOWED_UCUM_CODES = Set.of("mg/dL", "mmol/L");
+	private static final String EXPECTED = "Observation.valueQuantity.system must be http://unitsofmeasure.org and code must be allowed by the exchange contract.";
 
 	@Override
 	public String ruleCode() {
@@ -40,7 +43,7 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 			return notApplicable(
 					"Observation/" + observationId + ".value[x]",
 					"N/A",
-					"Observation.value[x] is not present, so LAB-UNIT-001 cannot evaluate a Quantity unit."
+					"Observation.value[x] is not present, so LAB-UNIT-002 cannot evaluate UCUM system/code."
 			);
 		}
 
@@ -49,13 +52,13 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 			return notApplicable(
 					"Observation/" + observationId + ".value[x]",
 					value.fhirType(),
-					"Observation.value[x] is not Quantity, so LAB-UNIT-001 does not apply."
+					"Observation.value[x] is not Quantity, so LAB-UNIT-002 does not apply."
 			);
 		}
 
-		String path = "Observation/" + observationId + ".valueQuantity.unit";
-		String actual = actualUnit(quantity);
-		if (hasReadableUnit(quantity)) {
+		String path = "Observation/" + observationId + ".valueQuantity.system/code";
+		String actual = actualUcumSummary(quantity);
+		if (hasAllowedUcumSystemAndCode(quantity)) {
 			return new RuleResult(
 					RULE_CODE,
 					RuleOutcome.PASS,
@@ -63,19 +66,25 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 					path,
 					actual,
 					EXPECTED,
-					"Observation.valueQuantity.unit is present.",
+					"Observation.valueQuantity uses the UCUM system and an allowed unit code from the MVP exchange contract.",
 					"無需修正。"
 			);
 		}
 		return fail(path, actual);
 	}
 
-	private boolean hasReadableUnit(Quantity quantity) {
-		return quantity.hasUnit() && !quantity.getUnit().isBlank();
+	private boolean hasAllowedUcumSystemAndCode(Quantity quantity) {
+		return quantity.hasSystem()
+				&& UCUM_SYSTEM.equals(quantity.getSystem())
+				&& quantity.hasCode()
+				&& !quantity.getCode().isBlank()
+				&& ALLOWED_UCUM_CODES.contains(quantity.getCode());
 	}
 
-	private String actualUnit(Quantity quantity) {
-		return hasReadableUnit(quantity) ? quantity.getUnit() : "N/A";
+	private String actualUcumSummary(Quantity quantity) {
+		String system = quantity.hasSystem() && !quantity.getSystem().isBlank() ? quantity.getSystem() : "N/A";
+		String code = quantity.hasCode() && !quantity.getCode().isBlank() ? quantity.getCode() : "N/A";
+		return system + "|" + code;
 	}
 
 	private RuleResult fail(String path, String actual) {
@@ -86,8 +95,8 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 				path,
 				actual,
 				EXPECTED,
-				"Observation.valueQuantity exists, but unit is missing or blank.",
-				"請補上合作方可讀的檢驗單位，例如 mg/dL；UCUM system/code 會由 LAB-UNIT-002 另行檢查。"
+				"Observation.valueQuantity system/code does not match the UCUM policy in the exchange contract.",
+				"請使用合作契約允許的 UCUM 條件：system 必須是 http://unitsofmeasure.org，code 目前允許 mg/dL 或 mmol/L；本規則不是完整 UCUM validation，也不做語法解析、單位換算或臨床合理性判斷。"
 		);
 	}
 

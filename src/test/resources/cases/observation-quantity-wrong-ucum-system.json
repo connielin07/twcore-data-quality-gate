@@ -1,0 +1,27 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-wrong-ucum-system",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2345-7"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 95,
+          "unit": "mg/dL",
+          "system": "http://example.org/local-units",
+          "code": "mg/dL"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-ucum-code-not-allowed",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "2345-7"
+            }
+          ]
+        },
+        "valueQuantity": {
+          "value": 95,
+          "unit": "g/L",
+          "system": "http://unitsofmeasure.org",
+          "code": "g/L"
+        }
+      }
+    }
+  ]
+}
