@@ -41,6 +41,10 @@ public class BundleParseService {
 	}
 
 	public ValidationResult parse(String bundleJson) {
+		return parse(bundleJson, ContractVersion.V1_1);
+	}
+
+	public ValidationResult parse(String bundleJson, ContractVersion contractVersion) {
 		if (bundleJson == null || bundleJson.isBlank()) {
 			return new ValidationResult(
 					ParseStatus.FAILED,
@@ -103,7 +107,7 @@ public class BundleParseService {
 					.map(BundleEntrySummary::fromEntry)
 					.toList();
 			TwCoreValidationResult twCoreValidationResult = twCoreValidationService.validate(bundle);
-			List<RuleResult> contractRuleResults = validateContractRules(bundle);
+			List<RuleResult> contractRuleResults = validateContractRules(bundle, contractVersion);
 			ParseStatus fhirValidationStatus = hasErrors(validationResult.getMessages())
 					? ParseStatus.FAILED
 					: ParseStatus.PASSED;
@@ -148,8 +152,9 @@ public class BundleParseService {
 		}
 	}
 
-	private List<RuleResult> validateContractRules(Bundle bundle) {
+	private List<RuleResult> validateContractRules(Bundle bundle, ContractVersion contractVersion) {
 		return contractRules.stream()
+				.filter(rule -> contractVersion.enables(rule.ruleCode()))
 				.flatMap(rule -> rule.validate(bundle).stream())
 				.toList();
 	}

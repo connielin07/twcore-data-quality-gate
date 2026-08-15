@@ -3,6 +3,14 @@
   "type": "collection",
   "entry": [
     {
+      "fullUrl": "urn:uuid:123e4567-e89b-12d3-a456-426614174000",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-1"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:223e4567-e89b-12d3-a456-426614174001",
       "resource": {
         "resourceType": "Observation",
         "id": "obs-wrong-ucum-system",
@@ -15,12 +23,34 @@
             }
           ]
         },
+        "subject": {
+          "reference": "Patient/patient-1"
+        },
         "valueQuantity": {
           "value": 95,
           "unit": "mg/dL",
           "system": "http://example.org/local-units",
           "code": "mg/dL"
         }
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:323e4567-e89b-12d3-a456-426614174002",
+      "resource": {
+        "resourceType": "DiagnosticReport",
+        "id": "report-1",
+        "status": "final",
+        "code": {
+          "text": "Basic lab report"
+        },
+        "subject": {
+          "reference": "Patient/patient-1"
+        },
+        "result": [
+          {
+            "reference": "Observation/obs-wrong-ucum-system"
+          }
+        ]
       }
     }
   ]
