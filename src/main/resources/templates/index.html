@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TW Lab Contract Gate - Day 16</title>
+  <title>TW Lab Contract Gate - Day 17</title>
   <style>
     :root {
       color-scheme: light;
@@ -155,7 +155,7 @@
 </head>
 <body>
 <main>
-  <h1>TW Lab Contract Gate - Day 16</h1>
+  <h1>TW Lab Contract Gate - Day 17</h1>
   <p class="subtitle">四層驗證核心：JSON parse、FHIR R4、TW Core 安全降級、六條交換契約規則與最小 Quality Gate。</p>
 
   <form method="post" action="/parse" enctype="multipart/form-data">
@@ -399,6 +399,39 @@
       </tr>
       </tbody>
     </table>
+
+    <div th:if="${comparison.hasGateOutcomeChange() && !comparison.newlyFailedV11RuleResults().isEmpty()}">
+      <h3>升級後新增阻擋</h3>
+      <p class="muted">
+        同一份 Bundle 從
+        <span th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
+        -&gt;
+        <span th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
+        時，以下規則提供可修正的 Expected / Actual 證據。
+      </p>
+      <table>
+        <thead>
+        <tr>
+          <th>Rule code</th>
+          <th>Path</th>
+          <th>Actual</th>
+          <th>Expected</th>
+          <th>Evidence</th>
+          <th>Suggestion</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ruleResult : ${comparison.newlyFailedV11RuleResults()}">
+          <td th:text="${ruleResult.ruleCode}">LAB-UNIT-002</td>
+          <td th:text="${ruleResult.path}">Observation/obs-1.valueQuantity.system/code</td>
+          <td th:text="${ruleResult.actual}">http://example.org/local-units|mg/dL</td>
+          <td th:text="${ruleResult.expected}">Observation.valueQuantity.system must be http://unitsofmeasure.org.</td>
+          <td th:text="${ruleResult.evidence}">Evidence</td>
+          <td th:text="${ruleResult.suggestion}">Suggestion</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 </main>
 </body>

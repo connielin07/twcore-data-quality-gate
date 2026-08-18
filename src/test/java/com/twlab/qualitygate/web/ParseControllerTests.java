@@ -1,6 +1,7 @@
 package com.twlab.qualitygate.web;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,7 +29,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 16")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 17")));
 	}
 
 	@Test
@@ -62,7 +63,8 @@ class ParseControllerTests {
 				.andExpect(content().string(containsString("v1.0")))
 				.andExpect(content().string(containsString("v1.1")))
 				.andExpect(content().string(containsString("PASSED")))
-				.andExpect(content().string(containsString("None")));
+				.andExpect(content().string(containsString("None")))
+				.andExpect(content().string(not(containsString("升級後新增阻擋"))));
 	}
 
 	@Test
@@ -75,7 +77,14 @@ class ParseControllerTests {
 				.andExpect(content().string(containsString("PASSED")))
 				.andExpect(content().string(containsString("v1.1")))
 				.andExpect(content().string(containsString("BLOCKED")))
-				.andExpect(content().string(containsString("LAB-UNIT-002")));
+				.andExpect(content().string(containsString("升級後新增阻擋")))
+				.andExpect(content().string(containsString("PASSED")))
+				.andExpect(content().string(containsString("BLOCKED")))
+				.andExpect(content().string(containsString("LAB-UNIT-002")))
+				.andExpect(content().string(containsString("Observation/obs-wrong-ucum-system.valueQuantity.system/code")))
+				.andExpect(content().string(containsString("http://example.org/local-units|mg/dL")))
+				.andExpect(content().string(containsString("Observation.valueQuantity.system must be http://unitsofmeasure.org")))
+				.andExpect(content().string(containsString("請使用合作契約允許的 UCUM 條件")));
 	}
 
 	@Test
