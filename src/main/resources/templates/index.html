@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TW Lab Contract Gate - Day 13</title>
+  <title>TW Lab Contract Gate - Day 16</title>
   <style>
     :root {
       color-scheme: light;
@@ -155,7 +155,7 @@
 </head>
 <body>
 <main>
-  <h1>TW Lab Contract Gate - Day 13</h1>
+  <h1>TW Lab Contract Gate - Day 16</h1>
   <p class="subtitle">四層驗證核心：JSON parse、FHIR R4、TW Core 安全降級、六條交換契約規則與最小 Quality Gate。</p>
 
   <form method="post" action="/parse" enctype="multipart/form-data">
@@ -346,6 +346,56 @@
         <td th:text="${ruleResult.expected}">Expected condition</td>
         <td th:text="${ruleResult.evidence}">Evidence</td>
         <td th:text="${ruleResult.suggestion}">Suggestion</td>
+      </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="result" th:if="${comparison != null}">
+    <h2>Contract comparison</h2>
+    <p class="muted">同一份 Bundle 以契約 v1.0 與 v1.1 各跑一次，呈現最小版本差異。</p>
+    <table>
+      <thead>
+      <tr>
+        <th>Contract version</th>
+        <th>Quality Gate</th>
+        <th>Failed rule codes</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>v1.0</td>
+        <td>
+          <span class="status"
+                th:classappend="${comparison.v1Result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${comparison.v1Result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
+                th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
+        </td>
+        <td>
+          <span class="muted"
+                th:if="${comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
+            None
+          </span>
+          <span th:each="ruleResult, iter : ${comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL']}">
+            <span th:text="${ruleResult.ruleCode}">LAB-REF-001</span><span th:if="${!iter.last}">, </span>
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td>v1.1</td>
+        <td>
+          <span class="status"
+                th:classappend="${comparison.v1_1Result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${comparison.v1_1Result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
+                th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
+        </td>
+        <td>
+          <span class="muted"
+                th:if="${comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
+            None
+          </span>
+          <span th:each="ruleResult, iter : ${comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL']}">
+            <span th:text="${ruleResult.ruleCode}">LAB-UNIT-002</span><span th:if="${!iter.last}">, </span>
+          </span>
+        </td>
       </tr>
       </tbody>
     </table>

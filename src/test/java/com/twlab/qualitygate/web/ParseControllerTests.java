@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,7 +28,7 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 13")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 16")));
 	}
 
 	@Test
@@ -47,6 +50,31 @@ class ParseControllerTests {
 				.andExpect(content().string(containsString("Quality Gate")))
 				.andExpect(content().string(containsString("Exchange contract rule results")))
 				.andExpect(content().string(containsString("LAB-REF-001")))
+				.andExpect(content().string(containsString("LAB-UNIT-002")));
+	}
+
+	@Test
+	void rendersContractComparisonForValidBundle() throws Exception {
+		mockMvc.perform(post("/parse")
+						.param("bundleJson", fixture("valid-twcore-contract-bundle.json")))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Contract comparison")))
+				.andExpect(content().string(containsString("v1.0")))
+				.andExpect(content().string(containsString("v1.1")))
+				.andExpect(content().string(containsString("PASSED")))
+				.andExpect(content().string(containsString("None")));
+	}
+
+	@Test
+	void rendersV11UcumFailureInContractComparison() throws Exception {
+		mockMvc.perform(post("/parse")
+						.param("bundleJson", fixture("twcore-valid-wrong-ucum-system.json")))
+				.andExpect(status().isOk())
+				.andExpect(content().string(containsString("Contract comparison")))
+				.andExpect(content().string(containsString("v1.0")))
+				.andExpect(content().string(containsString("PASSED")))
+				.andExpect(content().string(containsString("v1.1")))
+				.andExpect(content().string(containsString("BLOCKED")))
 				.andExpect(content().string(containsString("LAB-UNIT-002")));
 	}
 
@@ -112,5 +140,16 @@ class ParseControllerTests {
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("FAILED")))
 				.andExpect(content().string(containsString("Bundle.type")));
+	}
+
+	private String fixture(String name) {
+		try (var input = getClass().getResourceAsStream("/cases/" + name)) {
+			if (input == null) {
+				throw new IllegalArgumentException("Missing fixture: " + name);
+			}
+			return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+		} catch (IOException ex) {
+			throw new UncheckedIOException(ex);
+		}
 	}
 }

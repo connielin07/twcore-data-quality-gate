@@ -1,6 +1,7 @@
 package com.twlab.qualitygate.web;
 
 import com.twlab.qualitygate.validation.BundleParseService;
+import com.twlab.qualitygate.validation.ContractComparisonService;
 import com.twlab.qualitygate.validation.OperationOutcomeIssue;
 import com.twlab.qualitygate.validation.ParseStatus;
 import com.twlab.qualitygate.validation.ResourceSummary;
@@ -20,9 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class ParseController {
 
 	private final BundleParseService bundleParseService;
+	private final ContractComparisonService contractComparisonService;
 
-	public ParseController(BundleParseService bundleParseService) {
+	public ParseController(
+			BundleParseService bundleParseService,
+			ContractComparisonService contractComparisonService
+	) {
 		this.bundleParseService = bundleParseService;
+		this.contractComparisonService = contractComparisonService;
 	}
 
 	@GetMapping({"/", "/parse", "/validate"})
@@ -49,6 +55,7 @@ public class ParseController {
 		}
 		model.addAttribute("bundleJson", input);
 		model.addAttribute("result", bundleParseService.parse(input));
+		model.addAttribute("comparison", contractComparisonService.compare(input));
 		return "index";
 	}
 
