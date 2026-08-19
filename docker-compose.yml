@@ -1,0 +1,5 @@
+services:
+  twcore-data-quality-gate:
+    build: .
+    ports:
+      - "8080:8080"

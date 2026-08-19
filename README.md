@@ -29,8 +29,24 @@ Open:
 http://localhost:8080
 ```
 
+## Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Open:
+
+```text
+http://localhost:8080
+```
+
 ## Test
 
 ```bash
 ./mvnw test
 ```
+
+## CI
+
+GitHub Actions runs the Maven test suite and package build on push and pull request using Java 17.
