@@ -67,7 +67,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 					actual,
 					EXPECTED,
 					"Observation.valueQuantity uses the UCUM system and an allowed unit code from the MVP exchange contract.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 		return fail(path, actual);
@@ -96,7 +96,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 				actual,
 				EXPECTED,
 				"Observation.valueQuantity system/code does not match the UCUM policy in the exchange contract.",
-				"請使用合作契約允許的 UCUM 條件：system 必須是 http://unitsofmeasure.org，code 目前允許 mg/dL 或 mmol/L；本規則不是完整 UCUM validation，也不做語法解析、單位換算或臨床合理性判斷。"
+				"Use UCUM conditions allowed by the exchange contract: system must be http://unitsofmeasure.org, and code currently allows mg/dL or mmol/L. This rule is not full UCUM validation and does not parse syntax, convert units, or judge clinical plausibility."
 		);
 	}
 
@@ -109,7 +109,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 				actual,
 				EXPECTED,
 				evidence,
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 }

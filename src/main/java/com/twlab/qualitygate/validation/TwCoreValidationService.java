@@ -29,13 +29,13 @@ public class TwCoreValidationService {
 			return TwCoreValidationResult.notEvaluated(message, profileResult.operationOutcomeIssues());
 		}
 		return TwCoreValidationResult.notEvaluated(
-				probeResult.message() + " 因此 TW Core validation 維持 NOT_EVALUATED，不冒充 Profile 通過。"
+				probeResult.message() + " TW Core validation stays NOT_EVALUATED and is not presented as a Profile pass."
 		);
 	}
 
 	public TwCoreValidationResult notEvaluatedBeforeBundleGate() {
 		return TwCoreValidationResult.notEvaluated(
-				"TW Core validation 未執行：JSON、FHIR R4 parse 或 Bundle gate 尚未通過。"
+				"TW Core validation did not run: JSON, FHIR R4 parse, or Bundle gate did not pass."
 		);
 	}
 

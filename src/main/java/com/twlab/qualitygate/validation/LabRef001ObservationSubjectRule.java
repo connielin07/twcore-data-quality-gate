@@ -49,7 +49,7 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 					actual,
 					"Bundle-local Patient reference using Patient/{id} or entry.fullUrl.",
 					"External HTTP references are outside the MVP reference resolver boundary.",
-					"請改用 Bundle 內 Patient reference，或在後續版本接上外部 FHIR Server 查詢。"
+					"Use a Bundle-local Patient reference, or add external FHIR Server lookup in a later version."
 			);
 		}
 		if (patientReferences.contains(actual)) {
@@ -61,7 +61,7 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 					actual,
 					"Observation.subject points to a Patient in the same Bundle.",
 					"Matched Bundle Patient by logical reference or fullUrl.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 		return fail(path, actual, "Observation.subject.reference does not match any Patient in this Bundle.");
@@ -76,7 +76,7 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 				actual,
 				"Observation.subject must point to a Patient in the same Bundle.",
 				evidence,
-				"請確認 Observation.subject.reference 指向 Bundle.entry 內存在的 Patient。"
+				"Make Observation.subject.reference point to an existing Patient in Bundle.entry."
 		);
 	}
 
@@ -89,7 +89,7 @@ public class LabRef001ObservationSubjectRule implements ContractRule {
 				"N/A",
 				"At least one Observation is required to evaluate LAB-REF-001.",
 				"No Observation resource found in this Bundle.",
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 

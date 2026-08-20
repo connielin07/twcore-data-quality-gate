@@ -66,12 +66,12 @@ public class HapiTwCoreProfileValidator implements TwCoreProfileValidator {
 
 			if (hasErrors(issues)) {
 				return TwCoreProfileValidationResult.failed(
-						"Day 6 已執行 Patient、Observation-simple、DiagnosticReport 的最小 TW Core Profile validation；存在 error/fatal issue，因此 TW Core validation 標示 FAILED。",
+						"Day 6 minimal TW Core Profile validation ran for Patient, Observation-simple, and DiagnosticReport; error/fatal issues were found, so TW Core validation is marked FAILED.",
 						issues
 				);
 			}
 			return TwCoreProfileValidationResult.passed(
-					"Day 6 已執行 Patient、Observation-simple、DiagnosticReport 的最小 TW Core Profile validation；未回傳 error/fatal issue。",
+					"Day 6 minimal TW Core Profile validation ran for Patient, Observation-simple, and DiagnosticReport; no error/fatal issues were returned.",
 					issues
 			);
 		} catch (NoClassDefFoundError ex) {
@@ -157,10 +157,10 @@ public class HapiTwCoreProfileValidator implements TwCoreProfileValidator {
 
 	private TwCoreProfileValidationResult notEvaluated(String category, Throwable ex) {
 		return TwCoreProfileValidationResult.notEvaluated(
-				"Day 6 TW Core Profile validation spike 無法穩定執行；分類="
+				"Day 6 TW Core Profile validation spike could not run reliably; category="
 						+ category
-						+ "；原因=" + conciseMessage(ex)
-						+ "。因此 TW Core validation 維持 NOT_EVALUATED，不冒充 Profile 通過。",
+						+ "; reason=" + conciseMessage(ex)
+						+ ". TW Core validation stays NOT_EVALUATED and is not presented as a Profile pass.",
 				List.of()
 		);
 	}

@@ -20,8 +20,8 @@ class ContractComparisonServiceTests {
 			fhirContext,
 			fhirConfig.fhirValidator(fhirContext),
 			new TwCoreValidationService(
-					() -> TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。"),
-					bundle -> TwCoreProfileValidationResult.passed("Test profile validation passed。", List.of())
+					() -> TwCorePackageProbeResult.loaded("TW Core package loading probe succeeded: test package loaded."),
+					bundle -> TwCoreProfileValidationResult.passed("Test profile validation passed.", List.of())
 			),
 			contractRules()
 	);

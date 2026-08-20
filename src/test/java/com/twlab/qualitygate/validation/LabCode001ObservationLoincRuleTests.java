@@ -39,7 +39,7 @@ class LabCode001ObservationLoincRuleTests {
 		assertThat(results.get(0).severity()).isEqualTo("error");
 		assertThat(results.get(0).path()).isEqualTo("Observation/obs-disallowed-loinc.code.coding");
 		assertThat(results.get(0).actual()).contains("http://loinc.org|9999-9");
-		assertThat(results.get(0).suggestion()).contains("合作契約允許的 LOINC code");
+		assertThat(results.get(0).suggestion()).contains("LOINC code allowed by the exchange contract");
 	}
 
 	@Test

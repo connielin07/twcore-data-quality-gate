@@ -24,3 +24,6 @@ jobs:
 
       - name: Build package
         run: ./mvnw package
+
+      - name: Build Docker image
+        run: docker build -t twcore-data-quality-gate:ci .

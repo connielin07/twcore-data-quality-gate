@@ -47,6 +47,18 @@ class LabRef001ObservationSubjectRuleTests {
 		assertThat(results.get(0).evidence()).contains("outside the MVP reference resolver boundary");
 	}
 
+	@Test
+	void isNotApplicableWhenBundleHasNoObservation() {
+		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"));
+
+		assertThat(results).hasSize(1);
+		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-001");
+		assertThat(results.get(0).outcome()).isEqualTo(RuleOutcome.NOT_APPLICABLE);
+		assertThat(results.get(0).severity()).isEqualTo("information");
+		assertThat(results.get(0).path()).isEqualTo("Bundle.entry");
+		assertThat(results.get(0).evidence()).contains("No Observation resource found");
+	}
+
 	private Bundle bundle(String fixtureName) {
 		return (Bundle) fhirContext.newJsonParser().parseResource(fixture(fixtureName));
 	}

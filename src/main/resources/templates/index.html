@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TW Lab Contract Gate - Day 17</title>
+  <title>TW Lab Contract Gate</title>
   <style>
     :root {
       color-scheme: light;
@@ -28,6 +28,16 @@
       font-size: 28px;
     }
 
+    h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 28px 0 8px;
+      font-size: 17px;
+    }
+
     .subtitle {
       margin: 0 0 24px;
       color: #5c6675;
@@ -40,6 +50,11 @@
       border-radius: 8px;
       padding: 20px;
       margin-top: 16px;
+    }
+
+    .form-title {
+      margin: 0 0 16px;
+      font-size: 18px;
     }
 
     label {
@@ -127,10 +142,63 @@
       color: #7b8491;
     }
 
+    .report-overview {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+      gap: 16px;
+      margin: 16px 0 20px;
+    }
+
+    .gate-card,
+    .meta-card {
+      border: 1px solid #dfe4ea;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fbfcfd;
+    }
+
+    .gate-card .label,
+    .meta-card .label {
+      color: #5c6675;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .gate-card .status {
+      font-size: 16px;
+      padding: 4px 12px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px 12px;
+      margin: 0;
+    }
+
+    .section-note {
+      margin: 0 0 12px;
+      color: #5c6675;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 12px;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .evidence-table {
+      min-width: 1120px;
+    }
+
+    .upgrade-evidence-table {
+      min-width: 980px;
     }
 
     th,
@@ -147,92 +215,244 @@
     }
 
     @media (max-width: 640px) {
+      main {
+        padding: 24px 12px 36px;
+      }
+
+      form,
+      .result {
+        padding: 16px;
+      }
+
       dl {
         grid-template-columns: 1fr;
+      }
+
+      .report-overview,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
       }
     }
   </style>
 </head>
 <body>
 <main>
-  <h1>TW Lab Contract Gate - Day 17</h1>
-  <p class="subtitle">四層驗證核心：JSON parse、FHIR R4、TW Core 安全降級、六條交換契約規則與最小 Quality Gate。</p>
+  <h1>TW Lab Contract Gate</h1>
+  <p class="subtitle">A quality report for Bundle structure, FHIR R4, TW Core, exchange contract rules, and contract version impact.</p>
 
   <form method="post" action="/parse" enctype="multipart/form-data">
-    <label for="bundleFile">上傳 Bundle JSON</label>
+    <h2 class="form-title">Input Bundle</h2>
+    <label for="bundleFile">Upload Bundle JSON</label>
     <input id="bundleFile" name="bundleFile" type="file" accept=".json,application/json">
 
-    <label for="bundleJson">或直接貼上 JSON</label>
+    <label for="bundleJson">Or paste JSON</label>
     <textarea id="bundleJson" name="bundleJson" spellcheck="false" th:text="${bundleJson}"></textarea>
 
-    <p class="muted">若同時上傳檔案與貼上文字，系統會優先使用上傳檔案。</p>
-    <button type="submit">Parse Bundle</button>
+    <p class="muted">If both are provided, the uploaded file is used first.</p>
+    <button type="submit">Validate Bundle</button>
   </form>
 
   <section class="result" th:if="${result.jsonStatus != null}">
-    <h2>解析結果</h2>
-    <dl>
-      <dt>Quality Gate</dt>
-      <dd>
+    <h2>Quality Test Report</h2>
+    <div class="report-overview">
+      <div class="gate-card">
+        <div class="label">Overall Quality Gate</div>
         <span class="status"
               th:classappend="${result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
               th:text="${result.gateOutcome}">BLOCKED</span>
-      </dd>
+        <p class="muted" th:if="${result.gateOutcome.name() == 'BLOCKED'}">
+          At least one blocking condition was found. Check Blocking and rule evidence below.
+        </p>
+        <p class="muted" th:if="${result.gateOutcome.name() == 'PASS_WITH_WARNINGS'}">
+          No blocking issue was found, but at least one layer was not fully evaluated.
+        </p>
+        <p class="muted" th:if="${result.gateOutcome.name() == 'PASSED'}">
+          No blocking issue was found in the MVP validation layers or exchange contract rules.
+        </p>
+      </div>
+      <div class="meta-card">
+        <div class="label">Input summary</div>
+        <dl class="meta-grid">
+          <dt>Resource type</dt>
+          <dd th:text="${result.resourceType ?: 'N/A'}">Bundle</dd>
 
-      <dt>JSON parse</dt>
-      <dd>
-        <span class="status"
-              th:classappend="${result.jsonStatus.name() == 'PASSED'} ? ' passed' : ' failed'"
-              th:text="${result.jsonStatus}">PASSED</span>
-      </dd>
+          <dt>Resource count</dt>
+          <dd th:text="${result.resourceCount != null ? result.resourceCount : 'N/A'}">1</dd>
 
-      <dt>FHIR R4 parse</dt>
-      <dd>
-        <span class="status"
-              th:classappend="${result.fhirR4Status.name() == 'PASSED'} ? ' passed' : ' failed'"
-              th:text="${result.fhirR4Status}">PASSED</span>
-      </dd>
+          <dt>TW Core package</dt>
+          <dd th:text="${result.twCoreValidationResult.packageId + '#' + result.twCoreValidationResult.packageVersion}">
+            tw.gov.mohw.twcore#1.0.0
+          </dd>
 
-      <dt>Resource Type Gate</dt>
-      <dd>
-        <span class="status"
-              th:classappend="${result.resourceTypeStatus.name() == 'PASSED'} ? ' passed' : ' failed'"
-              th:text="${result.resourceTypeStatus}">PASSED</span>
-      </dd>
+          <dt>Error message</dt>
+          <dd th:text="${result.errorMessage ?: 'N/A'}">N/A</dd>
+        </dl>
+      </div>
+    </div>
 
-      <dt>FHIR R4 validation</dt>
-      <dd>
-        <span class="status"
-              th:classappend="${result.fhirValidationStatus.name() == 'PASSED'} ? ' passed' : (${result.fhirValidationStatus.name() == 'FAILED'} ? ' failed' : '')"
-              th:text="${result.fhirValidationStatus}">PASSED</span>
-      </dd>
+    <h3>Layer summary</h3>
+    <p class="section-note">Each row is a validation layer; Blocking = Yes contributes to the final Quality Gate.</p>
+    <table>
+      <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Status</th>
+        <th>Blocking?</th>
+        <th>Evidence</th>
+        <th>Notes</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>JSON parse</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.jsonStatus.name() == 'PASSED'} ? ' passed' : ' failed'"
+                th:text="${result.jsonStatus}">PASSED</span>
+        </td>
+        <td th:text="${result.jsonStatus.name() == 'FAILED'} ? 'Yes' : 'No'">No</td>
+        <td th:text="${result.errorMessage ?: 'JSON syntax accepted'}">JSON syntax accepted</td>
+        <td>JSON must parse before FHIR checks can run.</td>
+      </tr>
+      <tr>
+        <td>FHIR R4 parse</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.fhirR4Status.name() == 'PASSED'} ? ' passed' : ' failed'"
+                th:text="${result.fhirR4Status}">PASSED</span>
+        </td>
+        <td th:text="${result.fhirR4Status.name() == 'FAILED'} ? 'Yes' : 'No'">No</td>
+        <td th:text="${result.resourceType ?: 'N/A'}">Bundle</td>
+        <td>Input can be parsed as a FHIR R4 resource.</td>
+      </tr>
+      <tr>
+        <td>Resource Type Gate</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.resourceTypeStatus.name() == 'PASSED'} ? ' passed' : ' failed'"
+                th:text="${result.resourceTypeStatus}">PASSED</span>
+        </td>
+        <td th:text="${result.resourceTypeStatus.name() == 'FAILED'} ? 'Yes' : 'No'">No</td>
+        <td th:text="${result.resourceCount != null ? result.resourceCount + ' resources' : 'N/A'}">3 resources</td>
+        <td>Only collection Bundles continue to exchange contract rules.</td>
+      </tr>
+      <tr>
+        <td>FHIR R4 validation</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.fhirValidationStatus.name() == 'PASSED'} ? ' passed' : (${result.fhirValidationStatus.name() == 'FAILED'} ? ' failed' : ' not-evaluated')"
+                th:text="${result.fhirValidationStatus}">PASSED</span>
+        </td>
+        <td th:text="${result.fhirValidationStatus.name() == 'FAILED'} ? 'Yes' : 'No'">No</td>
+        <td th:text="${#lists.size(result.operationOutcomeIssues)} + ' issues'">0 issues</td>
+        <td>OperationOutcome warnings are shown but do not always block.</td>
+      </tr>
+      <tr>
+        <td>TW Core validation</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.twCoreValidationResult.status.name() == 'PASSED'} ? ' passed' : (${result.twCoreValidationResult.status.name() == 'FAILED'} ? ' failed' : ' not-evaluated')"
+                th:text="${result.twCoreValidationResult.status}">NOT_EVALUATED</span>
+        </td>
+        <td th:text="${result.twCoreValidationResult.status.name() == 'FAILED'} ? 'Yes' : 'No'">No</td>
+        <td>
+          <span th:text="${#lists.size(result.twCoreValidationResult.operationOutcomeIssues)}">0</span>
+          <span> issues (</span>
+          <span th:text="${#lists.size(result.twCoreValidationResult.operationOutcomeIssues.?[severity == 'error' || severity == 'fatal'])}">0</span>
+          <span> errors, </span>
+          <span th:text="${#lists.size(result.twCoreValidationResult.operationOutcomeIssues.?[severity == 'warning'])}">0</span>
+          <span> warnings)</span>
+          <br>
+          <span class="muted"
+                th:text="${result.twCoreValidationResult.packageId + '#' + result.twCoreValidationResult.packageVersion}">
+            tw.gov.mohw.twcore#1.0.0
+          </span>
+        </td>
+        <td>
+          <span th:if="${result.twCoreValidationResult.status.name() == 'PASSED'}">
+            TW Core check ran without error/fatal issues.
+          </span>
+          <span th:if="${result.twCoreValidationResult.status.name() == 'FAILED'}">
+            TW Core check found blocking Profile issues; see TW Core Profile issues below.
+          </span>
+          <span th:if="${result.twCoreValidationResult.status.name() == 'NOT_EVALUATED'}">
+            TW Core check was not fully evaluated; this is a warning, not a pass.
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td>Exchange contract rules</td>
+        <td>
+          <span class="status failed"
+                th:if="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
+            FAILED
+          </span>
+          <span class="status warning"
+                th:if="${!#lists.isEmpty(result.contractRuleResults) && result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty() && !result.contractRuleResults.?[outcome.name() == 'NOT_EVALUATED'].isEmpty()}">
+            PASS_WITH_WARNINGS
+          </span>
+          <span class="status passed"
+                th:if="${!#lists.isEmpty(result.contractRuleResults) && result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty() && result.contractRuleResults.?[outcome.name() == 'NOT_EVALUATED'].isEmpty()}">
+            PASSED
+          </span>
+          <span class="status not-evaluated"
+                th:if="${#lists.isEmpty(result.contractRuleResults)}">
+            NOT_EVALUATED
+          </span>
+        </td>
+        <td th:text="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()} ? 'Yes' : 'No'">No</td>
+        <td>
+          <span th:text="${#lists.size(result.contractRuleResults)}">6</span>
+          <span> rule results, </span>
+          <span th:text="${#lists.size(result.contractRuleResults.?[outcome.name() == 'FAIL'])}">0</span>
+          <span> failed</span>
+        </td>
+        <td>Six MVP exchange contract rules with Expected / Actual evidence.</td>
+      </tr>
+      <tr>
+        <td>Quality Gate</td>
+        <td>
+          <span class="status"
+                th:classappend="${result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
+                th:text="${result.gateOutcome}">BLOCKED</span>
+        </td>
+        <td th:text="${result.gateOutcome.name() == 'BLOCKED'} ? 'Yes' : 'No'">Yes</td>
+        <td th:text="${result.gateOutcome}">BLOCKED</td>
+        <td>Combined result from validation layers and exchange contract rules.</td>
+      </tr>
+      <tr th:if="${comparison != null}">
+        <td>Contract comparison</td>
+        <td>
+          <span class="status warning"
+                th:if="${comparison.hasGateOutcomeChange() || comparison.hasNewV11RuleFailures()}">
+            Impact
+          </span>
+          <span class="status passed"
+                th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewV11RuleFailures()}">
+            No impact
+          </span>
+        </td>
+        <td th:text="${comparison.v1_1Result.gateOutcome.name() == 'BLOCKED'} ? 'Potentially' : 'No'">Potentially</td>
+        <td>
+          <span>v1.0 </span><span th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
+          <span> / v1.1 </span><span th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
+        </td>
+        <td>
+          <span th:if="${comparison.hasGateOutcomeChange()}">v1.1 changed the gate outcome for this Bundle.</span>
+          <span th:if="${!comparison.hasGateOutcomeChange() && comparison.hasNewV11RuleFailures()}">Same gate outcome, but v1.1 adds new failed exchange rules.</span>
+          <span th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewV11RuleFailures()}">Same gate outcome in both versions; check evidence layers for shared blockers.</span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
 
-      <dt>TW Core validation</dt>
-      <dd>
-        <span class="status"
-              th:classappend="${result.twCoreValidationResult.status.name() == 'PASSED'} ? ' passed' : (${result.twCoreValidationResult.status.name() == 'FAILED'} ? ' failed' : ' not-evaluated')"
-              th:text="${result.twCoreValidationResult.status}">NOT_EVALUATED</span>
-        <span class="muted"
-              th:text="${result.twCoreValidationResult.packageId + '#' + result.twCoreValidationResult.packageVersion}">
-          tw.gov.mohw.twcore#1.0.0
-        </span>
-        <br>
-        <span class="muted" th:text="${result.twCoreValidationResult.message}">
-          尚未穩定載入 tw.gov.mohw.twcore#1.0.0，不冒充 Profile 通過。
-        </span>
-      </dd>
-
-      <dt>Resource type</dt>
-      <dd th:text="${result.resourceType ?: 'N/A'}">Bundle</dd>
-
-      <dt>Resource count</dt>
-      <dd th:text="${result.resourceCount != null ? result.resourceCount : 'N/A'}">1</dd>
-
-      <dt>Error message</dt>
-      <dd th:text="${result.errorMessage ?: 'N/A'}">N/A</dd>
-    </dl>
-
-    <h3>Resource summary</h3>
+    <h3>Resource inventory</h3>
+    <p class="section-note">Lists resources found in the Bundle and whether this MVP handles them.</p>
     <dl>
       <dt>Patient</dt>
       <dd th:text="${result.resourceSummary.patientCount}">1</dd>
@@ -248,7 +468,7 @@
     </dl>
 
     <p class="muted" th:if="${#lists.isEmpty(result.bundleEntrySummaries)}">
-      沒有可顯示的 Bundle entry，或此層尚未執行。
+      No Bundle entries to display, or this layer did not run.
     </p>
     <table th:if="${!#lists.isEmpty(result.bundleEntrySummaries)}">
       <thead>
@@ -256,7 +476,7 @@
         <th>Resource type</th>
         <th>ID</th>
         <th>Full URL</th>
-        <th>Day 3 status</th>
+        <th>Evaluation status</th>
       </tr>
       </thead>
       <tbody>
@@ -273,9 +493,9 @@
       </tbody>
     </table>
 
-    <h3>OperationOutcome issues</h3>
+    <h3>FHIR R4 issues</h3>
     <p class="muted" th:if="${#lists.isEmpty(result.operationOutcomeIssues)}">
-      FHIR R4 validation 沒有回傳 issue，或此層尚未執行。
+      No FHIR R4 issues were returned, or this layer did not run.
     </p>
     <table th:if="${!#lists.isEmpty(result.operationOutcomeIssues)}">
       <thead>
@@ -296,7 +516,7 @@
 
     <h3>TW Core Profile issues</h3>
     <p class="muted" th:if="${#lists.isEmpty(result.twCoreValidationResult.operationOutcomeIssues)}">
-      TW Core Profile validation 沒有回傳 issue，或此層尚未執行。
+      No TW Core Profile issues were returned, or this layer did not run.
     </p>
     <table th:if="${!#lists.isEmpty(result.twCoreValidationResult.operationOutcomeIssues)}">
       <thead>
@@ -315,51 +535,55 @@
       </tbody>
     </table>
 
-    <h3>Exchange contract rule results</h3>
+    <h3>Exchange rule evidence</h3>
+    <p class="section-note">Exchange rules show rule code, field path, actual value, expected condition, and fix suggestion.</p>
     <p class="muted" th:if="${#lists.isEmpty(result.contractRuleResults)}">
-      交換契約規則尚未執行；通常代表 JSON/FHIR parse 失敗或輸入不是 Bundle。
+      Exchange contract rules did not run; usually JSON/FHIR parse failed or input was not a Bundle.
     </p>
-    <table th:if="${!#lists.isEmpty(result.contractRuleResults)}">
-      <thead>
-      <tr>
-        <th>Rule code</th>
-        <th>Outcome</th>
-        <th>Severity</th>
-        <th>Path</th>
-        <th>Actual</th>
-        <th>Expected</th>
-        <th>Evidence</th>
-        <th>Suggestion</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="ruleResult : ${result.contractRuleResults}">
-        <td th:text="${ruleResult.ruleCode}">LAB-REF-001</td>
-        <td>
-          <span class="status"
-                th:classappend="${ruleResult.outcome.name() == 'PASS'} ? ' passed' : (${ruleResult.outcome.name() == 'FAIL'} ? ' failed' : (${ruleResult.outcome.name() == 'NOT_EVALUATED'} ? ' warning' : ' not-evaluated'))"
-                th:text="${ruleResult.outcome}">PASS</span>
-        </td>
-        <td th:text="${ruleResult.severity}">information</td>
-        <td th:text="${ruleResult.path}">Observation/obs-1.subject.reference</td>
-        <td th:text="${ruleResult.actual}">Patient/patient-1</td>
-        <td th:text="${ruleResult.expected}">Expected condition</td>
-        <td th:text="${ruleResult.evidence}">Evidence</td>
-        <td th:text="${ruleResult.suggestion}">Suggestion</td>
-      </tr>
-      </tbody>
-    </table>
+    <div class="table-scroll" th:if="${!#lists.isEmpty(result.contractRuleResults)}">
+      <table class="evidence-table">
+        <thead>
+        <tr>
+          <th>Rule code</th>
+          <th>Outcome</th>
+          <th>Severity</th>
+          <th>Path</th>
+          <th>Actual</th>
+          <th>Expected</th>
+          <th>Evidence</th>
+          <th>Suggestion</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ruleResult : ${result.contractRuleResults}">
+          <td th:text="${ruleResult.ruleCode}">LAB-REF-001</td>
+          <td>
+            <span class="status"
+                  th:classappend="${ruleResult.outcome.name() == 'PASS'} ? ' passed' : (${ruleResult.outcome.name() == 'FAIL'} ? ' failed' : (${ruleResult.outcome.name() == 'NOT_EVALUATED'} ? ' warning' : ' not-evaluated'))"
+                  th:text="${ruleResult.outcome}">PASS</span>
+          </td>
+          <td th:text="${ruleResult.severity}">information</td>
+          <td th:text="${ruleResult.path}">Observation/obs-1.subject.reference</td>
+          <td th:text="${ruleResult.actual}">Patient/patient-1</td>
+          <td th:text="${ruleResult.expected}">Expected condition</td>
+          <td th:text="${ruleResult.evidence}">Evidence</td>
+          <td th:text="${ruleResult.suggestion}">Suggestion</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section class="result" th:if="${comparison != null}">
-    <h2>Contract comparison</h2>
-    <p class="muted">同一份 Bundle 以契約 v1.0 與 v1.1 各跑一次，呈現最小版本差異。</p>
+    <h2>Contract version comparison</h2>
+    <p class="muted">Runs the same Bundle against contract v1.0 and v1.1 to show version impact.</p>
     <table>
       <thead>
       <tr>
         <th>Contract version</th>
         <th>Quality Gate</th>
         <th>Failed rule codes</th>
+        <th>Blocking reason</th>
       </tr>
       </thead>
       <tbody>
@@ -379,6 +603,15 @@
             <span th:text="${ruleResult.ruleCode}">LAB-REF-001</span><span th:if="${!iter.last}">, </span>
           </span>
         </td>
+        <td>
+          <span th:if="${comparison.v1Result.gateOutcome.name() != 'BLOCKED'}">No blocking issue.</span>
+          <span th:if="${comparison.v1Result.jsonStatus.name() == 'FAILED'}">JSON parse failed. </span>
+          <span th:if="${comparison.v1Result.fhirR4Status.name() == 'FAILED'}">FHIR R4 parse failed. </span>
+          <span th:if="${comparison.v1Result.resourceTypeStatus.name() == 'FAILED'}">Resource Type Gate failed. </span>
+          <span th:if="${comparison.v1Result.fhirValidationStatus.name() == 'FAILED'}">FHIR R4 validation failed. </span>
+          <span th:if="${comparison.v1Result.twCoreValidationResult.status.name() == 'FAILED'}">TW Core validation failed. </span>
+          <span th:if="${!comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">Exchange contract rule failed.</span>
+        </td>
       </tr>
       <tr>
         <td>v1.1</td>
@@ -396,41 +629,53 @@
             <span th:text="${ruleResult.ruleCode}">LAB-UNIT-002</span><span th:if="${!iter.last}">, </span>
           </span>
         </td>
+        <td>
+          <span th:if="${comparison.v1_1Result.gateOutcome.name() != 'BLOCKED'}">No blocking issue.</span>
+          <span th:if="${comparison.v1_1Result.jsonStatus.name() == 'FAILED'}">JSON parse failed. </span>
+          <span th:if="${comparison.v1_1Result.fhirR4Status.name() == 'FAILED'}">FHIR R4 parse failed. </span>
+          <span th:if="${comparison.v1_1Result.resourceTypeStatus.name() == 'FAILED'}">Resource Type Gate failed. </span>
+          <span th:if="${comparison.v1_1Result.fhirValidationStatus.name() == 'FAILED'}">FHIR R4 validation failed. </span>
+          <span th:if="${comparison.v1_1Result.twCoreValidationResult.status.name() == 'FAILED'}">TW Core validation failed. </span>
+          <span th:if="${!comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">Exchange contract rule failed.</span>
+        </td>
       </tr>
       </tbody>
     </table>
 
-    <div th:if="${comparison.hasGateOutcomeChange() && !comparison.newlyFailedV11RuleResults().isEmpty()}">
-      <h3>升級後新增阻擋</h3>
+    <div th:if="${comparison.hasNewV11RuleFailures()}">
+      <h3>Upgrade blocker evidence</h3>
       <p class="muted">
-        同一份 Bundle 從
+        This Bundle has new v1.1 exchange rule failures. Gate outcome:
+        v1.0
         <span th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
-        -&gt;
+        / v1.1
         <span th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
-        時，以下規則提供可修正的 Expected / Actual 證據。
+        . The rules below provide fixable Expected / Actual evidence.
       </p>
-      <table>
-        <thead>
-        <tr>
-          <th>Rule code</th>
-          <th>Path</th>
-          <th>Actual</th>
-          <th>Expected</th>
-          <th>Evidence</th>
-          <th>Suggestion</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="ruleResult : ${comparison.newlyFailedV11RuleResults()}">
-          <td th:text="${ruleResult.ruleCode}">LAB-UNIT-002</td>
-          <td th:text="${ruleResult.path}">Observation/obs-1.valueQuantity.system/code</td>
-          <td th:text="${ruleResult.actual}">http://example.org/local-units|mg/dL</td>
-          <td th:text="${ruleResult.expected}">Observation.valueQuantity.system must be http://unitsofmeasure.org.</td>
-          <td th:text="${ruleResult.evidence}">Evidence</td>
-          <td th:text="${ruleResult.suggestion}">Suggestion</td>
-        </tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="upgrade-evidence-table">
+          <thead>
+          <tr>
+            <th>Rule code</th>
+            <th>Path</th>
+            <th>Actual</th>
+            <th>Expected</th>
+            <th>Evidence</th>
+            <th>Suggestion</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="ruleResult : ${comparison.newlyFailedV11RuleResults()}">
+            <td th:text="${ruleResult.ruleCode}">LAB-UNIT-002</td>
+            <td th:text="${ruleResult.path}">Observation/obs-1.valueQuantity.system/code</td>
+            <td th:text="${ruleResult.actual}">http://example.org/local-units|mg/dL</td>
+            <td th:text="${ruleResult.expected}">Observation.valueQuantity.system must be http://unitsofmeasure.org.</td>
+            <td th:text="${ruleResult.evidence}">Evidence</td>
+            <td th:text="${ruleResult.suggestion}">Suggestion</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 </main>

@@ -128,7 +128,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 					actual,
 					"DiagnosticReport.subject and referenced Observation.subject point to the same Patient.",
 					"Matched Patient reference by logical reference or fullUrl.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 
@@ -148,7 +148,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 				actual,
 				"DiagnosticReport.subject and referenced Observation.subject must identify the same Patient.",
 				evidence,
-				"請確認 DiagnosticReport.subject.reference 與 DiagnosticReport.result 指向的 Observation.subject.reference 為同一位 Patient。"
+				"Make DiagnosticReport.subject.reference and the referenced Observation.subject.reference identify the same Patient."
 		);
 	}
 
@@ -161,7 +161,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 				actual,
 				"Bundle-local Patient and Observation references using Resource/{id} or entry.fullUrl.",
 				evidence,
-				"請改用 Bundle 內 reference，或在後續版本接上外部 FHIR Server 查詢。"
+				"Use Bundle-local references, or add external FHIR Server lookup in a later version."
 		);
 	}
 
@@ -174,7 +174,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 				"N/A",
 				"At least one DiagnosticReport is required to evaluate LAB-REF-003.",
 				"No DiagnosticReport resource found in this Bundle.",
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 

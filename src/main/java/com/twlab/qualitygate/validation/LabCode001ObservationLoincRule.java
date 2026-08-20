@@ -47,7 +47,7 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 					actual,
 					"Observation.code must include an allowed LOINC coding from the exchange contract.",
 					"Matched allowed LOINC code from the MVP exchange contract.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 		return fail(path, actual);
@@ -90,7 +90,7 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 				actual,
 				"Observation.code must include an allowed LOINC coding from the exchange contract.",
 				"Observation.code does not include http://loinc.org with one of the allowed codes: 2345-7, 718-7.",
-				"請改用合作契約允許的 LOINC code；目前 MVP 允許 2345-7 與 718-7。"
+				"Use a LOINC code allowed by the exchange contract. This MVP allows 2345-7 and 718-7."
 		);
 	}
 
@@ -103,7 +103,7 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 				"N/A",
 				"At least one Observation is required to evaluate LAB-CODE-001.",
 				"No Observation resource found in this Bundle.",
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 }

@@ -29,7 +29,10 @@ class ParseControllerTests {
 	void rendersHomePage() throws Exception {
 		mockMvc.perform(get("/"))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("TW Lab Contract Gate - Day 17")));
+				.andExpect(content().string(containsString("TW Lab Contract Gate")))
+				.andExpect(content().string(containsString("Input Bundle")))
+				.andExpect(content().string(containsString("Upload Bundle JSON")))
+				.andExpect(content().string(containsString("Validate Bundle")));
 	}
 
 	@Test
@@ -45,11 +48,27 @@ class ParseControllerTests {
 				.andExpect(content().string(containsString("PASSED")))
 				.andExpect(content().string(containsString("Bundle")))
 				.andExpect(content().string(containsString("tw.gov.mohw.twcore#1.0.0")))
-				.andExpect(content().string(containsString("Resource summary")))
-				.andExpect(content().string(containsString("OperationOutcome issues")))
+				.andExpect(content().string(containsString("Quality Test Report")))
+				.andExpect(content().string(containsString("Overall Quality Gate")))
+				.andExpect(content().string(containsString("Input summary")))
+				.andExpect(content().string(containsString("Layer summary")))
+				.andExpect(content().string(containsString("JSON parse")))
+				.andExpect(content().string(containsString("FHIR R4 parse")))
+				.andExpect(content().string(containsString("Resource Type Gate")))
+				.andExpect(content().string(containsString("FHIR R4 validation")))
+				.andExpect(content().string(containsString("TW Core validation")))
+				.andExpect(content().string(containsString("errors")))
+				.andExpect(content().string(containsString("warnings")))
+				.andExpect(content().string(containsString("TW Core check ran without error/fatal issues.")))
+				.andExpect(content().string(containsString("Exchange contract rules")))
+				.andExpect(content().string(containsString("Contract comparison")))
+				.andExpect(content().string(containsString("Resource inventory")))
+				.andExpect(content().string(containsString("FHIR R4 issues")))
 				.andExpect(content().string(containsString("TW Core Profile issues")))
 				.andExpect(content().string(containsString("Quality Gate")))
-				.andExpect(content().string(containsString("Exchange contract rule results")))
+				.andExpect(content().string(containsString("Exchange rule evidence")))
+				.andExpect(content().string(containsString("Exchange rules show rule code")))
+				.andExpect(content().string(containsString("table-scroll")))
 				.andExpect(content().string(containsString("LAB-REF-001")))
 				.andExpect(content().string(containsString("LAB-UNIT-002")));
 	}
@@ -57,34 +76,38 @@ class ParseControllerTests {
 	@Test
 	void rendersContractComparisonForValidBundle() throws Exception {
 		mockMvc.perform(post("/parse")
-						.param("bundleJson", fixture("valid-twcore-contract-bundle.json")))
+				.param("bundleJson", fixture("valid-twcore-contract-bundle.json")))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("Contract comparison")))
+				.andExpect(content().string(containsString("Contract version comparison")))
 				.andExpect(content().string(containsString("v1.0")))
 				.andExpect(content().string(containsString("v1.1")))
 				.andExpect(content().string(containsString("PASSED")))
+				.andExpect(content().string(containsString("No impact")))
+				.andExpect(content().string(containsString("Blocking reason")))
+				.andExpect(content().string(containsString("No blocking issue.")))
 				.andExpect(content().string(containsString("None")))
-				.andExpect(content().string(not(containsString("升級後新增阻擋"))));
+				.andExpect(content().string(not(containsString("Upgrade blocker evidence"))));
 	}
 
 	@Test
 	void rendersV11UcumFailureInContractComparison() throws Exception {
 		mockMvc.perform(post("/parse")
-						.param("bundleJson", fixture("twcore-valid-wrong-ucum-system.json")))
+				.param("bundleJson", fixture("observation-quantity-wrong-ucum-system.json")))
 				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("Contract comparison")))
+				.andExpect(content().string(containsString("Contract version comparison")))
 				.andExpect(content().string(containsString("v1.0")))
-				.andExpect(content().string(containsString("PASSED")))
 				.andExpect(content().string(containsString("v1.1")))
 				.andExpect(content().string(containsString("BLOCKED")))
-				.andExpect(content().string(containsString("升級後新增阻擋")))
-				.andExpect(content().string(containsString("PASSED")))
-				.andExpect(content().string(containsString("BLOCKED")))
+				.andExpect(content().string(containsString("Impact")))
+				.andExpect(content().string(containsString("Exchange contract rule failed.")))
+				.andExpect(content().string(containsString("Upgrade blocker evidence")))
+				.andExpect(content().string(containsString("upgrade-evidence-table")))
+				.andExpect(content().string(containsString("This Bundle has new v1.1 exchange rule failures.")))
 				.andExpect(content().string(containsString("LAB-UNIT-002")))
 				.andExpect(content().string(containsString("Observation/obs-wrong-ucum-system.valueQuantity.system/code")))
 				.andExpect(content().string(containsString("http://example.org/local-units|mg/dL")))
 				.andExpect(content().string(containsString("Observation.valueQuantity.system must be http://unitsofmeasure.org")))
-				.andExpect(content().string(containsString("請使用合作契約允許的 UCUM 條件")));
+				.andExpect(content().string(containsString("Use UCUM conditions allowed by the exchange contract")));
 	}
 
 	@Test

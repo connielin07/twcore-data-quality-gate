@@ -2,6 +2,10 @@
 .github
 .mvn/wrapper/maven-wrapper.jar
 target
+docs
+*.md
 *.log
 .DS_Store
 HELP.md
+.idea
+.vscode

@@ -72,7 +72,7 @@ public class ParseController {
 				ParseStatus.FAILED,
 				ParseStatus.FAILED,
 				ParseStatus.NOT_EVALUATED,
-				TwCoreValidationResult.notEvaluated("TW Core validation 未執行：檔案讀取失敗。"),
+				TwCoreValidationResult.notEvaluated("TW Core validation did not run: file read failed."),
 				List.of(new OperationOutcomeIssue("fatal", "N/A", "File read failed before FHIR validation.")),
 				ResourceSummary.empty(),
 				List.of(),

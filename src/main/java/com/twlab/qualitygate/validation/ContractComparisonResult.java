@@ -12,6 +12,10 @@ public record ContractComparisonResult(
 		return v1Result.gateOutcome() != v1_1Result.gateOutcome();
 	}
 
+	public boolean hasNewV11RuleFailures() {
+		return !newlyFailedV11RuleResults().isEmpty();
+	}
+
 	public List<RuleResult> newlyFailedV11RuleResults() {
 		Set<String> v1FailedRuleCodes = v1Result.contractRuleResults().stream()
 				.filter(ruleResult -> ruleResult.outcome() == RuleOutcome.FAIL)

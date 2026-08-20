@@ -41,16 +41,16 @@ public class HapiTwCorePackageProbe implements TwCorePackageProbe {
 					? "FHIR R4 4.0.1 confirmed"
 					: "FHIR version reported by package: " + fhirVersion;
 			return TwCorePackageProbeResult.loaded(
-					"TW Core package loading probe 成功："
+					"TW Core package loading probe succeeded: "
 							+ npmPackage.id() + "#" + npmPackage.version()
-							+ "，canonical base " + CANONICAL_BASE
-							+ "，" + versionNote
-							+ "，已找到 Patient、Observation-simple、DiagnosticReport StructureDefinition。"
+							+ ", canonical base " + CANONICAL_BASE
+							+ ", " + versionNote
+							+ ", found Patient, Observation-simple, and DiagnosticReport StructureDefinitions."
 			);
 		} catch (NoClassDefFoundError ex) {
 			return TwCorePackageProbeResult.failed(
 					"DEPENDENCY",
-					"TW Core package loading probe 失敗：HAPI package loading dependency 不完整："
+					"TW Core package loading probe failed: HAPI package loading dependency is incomplete: "
 							+ conciseMessage(ex)
 			);
 		} catch (FHIRException ex) {
@@ -75,10 +75,10 @@ public class HapiTwCorePackageProbe implements TwCorePackageProbe {
 	}
 
 	private String failureMessage(Throwable ex) {
-		return "TW Core package loading probe 失敗："
+		return "TW Core package loading probe failed: "
 				+ TwCoreValidationResult.PACKAGE_ID + "#" + TwCoreValidationResult.PACKAGE_VERSION
-				+ " 無法穩定載入；分類=" + classify(ex)
-				+ "；原因=" + conciseMessage(ex);
+				+ " could not be loaded reliably; category=" + classify(ex)
+				+ "; reason=" + conciseMessage(ex);
 	}
 
 	private String classify(Throwable ex) {

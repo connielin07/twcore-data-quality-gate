@@ -39,7 +39,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 		assertThat(results.get(0).severity()).isEqualTo("error");
 		assertThat(results.get(0).path()).isEqualTo("Observation/obs-wrong-ucum-system.valueQuantity.system/code");
 		assertThat(results.get(0).actual()).isEqualTo("http://example.org/local-units|mg/dL");
-		assertThat(results.get(0).suggestion()).contains("system 必須是 http://unitsofmeasure.org");
+		assertThat(results.get(0).suggestion()).contains("system must be http://unitsofmeasure.org");
 	}
 
 	@Test
@@ -52,7 +52,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 		assertThat(results.get(0).severity()).isEqualTo("error");
 		assertThat(results.get(0).path()).isEqualTo("Observation/obs-ucum-code-not-allowed.valueQuantity.system/code");
 		assertThat(results.get(0).actual()).isEqualTo("http://unitsofmeasure.org|g/L");
-		assertThat(results.get(0).suggestion()).contains("code 目前允許 mg/dL 或 mmol/L");
+		assertThat(results.get(0).suggestion()).contains("code currently allows mg/dL or mmol/L");
 	}
 
 	@Test

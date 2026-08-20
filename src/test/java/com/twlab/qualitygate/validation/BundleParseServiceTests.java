@@ -16,10 +16,10 @@ class BundleParseServiceTests {
 	private final FhirConfig fhirConfig = new FhirConfig();
 	private final FhirContext fhirContext = FhirContext.forR4Cached();
 	private final CountingTwCorePackageProbe packageProbe = new CountingTwCorePackageProbe(
-			TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。")
+			TwCorePackageProbeResult.loaded("TW Core package loading probe succeeded: test package loaded.")
 	);
 	private final StubTwCoreProfileValidator profileValidator = new StubTwCoreProfileValidator(
-			TwCoreProfileValidationResult.passed("Day 6 test profile validation passed。", List.of())
+			TwCoreProfileValidationResult.passed("Day 6 test profile validation passed.", List.of())
 	);
 	private final BundleParseService service = new BundleParseService(
 			new ObjectMapper(),
@@ -49,7 +49,7 @@ class BundleParseServiceTests {
 		assertThat(result.twCoreValidationResult().packageId()).isEqualTo("tw.gov.mohw.twcore");
 		assertThat(result.twCoreValidationResult().packageVersion()).isEqualTo("1.0.0");
 		assertThat(result.twCoreValidationResult().message())
-				.contains("package loading probe 成功")
+				.contains("package loading probe succeeded")
 				.contains("Day 6 test profile validation passed");
 		assertThat(result.twCoreValidationResult().operationOutcomeIssues()).isEmpty();
 		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.PASSED);
@@ -160,7 +160,7 @@ class BundleParseServiceTests {
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
-		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate 尚未通過");
+		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate did not pass");
 		assertThat(result.errorMessage()).contains("JSON parse failed");
 	}
 
@@ -183,7 +183,7 @@ class BundleParseServiceTests {
 		assertThat(result.bundleEntrySummaries()).isEmpty();
 		assertThat(result.resourceSummary()).isEqualTo(ResourceSummary.empty());
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
-		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate 尚未通過");
+		assertThat(result.twCoreValidationResult().message()).contains("Bundle gate did not pass");
 		assertThat(result.resourceType()).isEqualTo("Patient");
 		assertThat(result.errorMessage()).contains("resourceType is not Bundle");
 	}
@@ -215,7 +215,7 @@ class BundleParseServiceTests {
 				new TwCoreValidationService(new CountingTwCorePackageProbe(
 						TwCorePackageProbeResult.failed(
 								"PACKAGE_SOURCE",
-								"TW Core package loading probe 失敗：tw.gov.mohw.twcore#1.0.0 無法穩定載入；分類=PACKAGE_SOURCE；原因=test failure"
+								"TW Core package loading probe failed: tw.gov.mohw.twcore#1.0.0 could not be loaded reliably; category=PACKAGE_SOURCE; reason=test failure"
 						)
 				), profileValidator),
 				contractRules()
@@ -226,15 +226,15 @@ class BundleParseServiceTests {
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
 		assertThat(result.twCoreValidationResult().message())
 				.contains("PACKAGE_SOURCE")
-				.contains("維持 NOT_EVALUATED")
-				.contains("不冒充 Profile 通過");
+				.contains("stays NOT_EVALUATED")
+				.contains("not presented as a Profile pass");
 		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.PASS_WITH_WARNINGS);
 	}
 
 	@Test
 	void onlyRunsTwCorePackageProbeAfterBundleGatePasses() {
 		CountingTwCorePackageProbe countingProbe = new CountingTwCorePackageProbe(
-				TwCorePackageProbeResult.loaded("TW Core package loading probe 成功：test package loaded。")
+				TwCorePackageProbeResult.loaded("TW Core package loading probe succeeded: test package loaded.")
 		);
 		BundleParseService countingService = new BundleParseService(
 				new ObjectMapper(),
@@ -266,7 +266,7 @@ class BundleParseServiceTests {
 				fhirConfig.fhirValidator(fhirContext),
 				new TwCoreValidationService(packageProbe, new StubTwCoreProfileValidator(
 						TwCoreProfileValidationResult.notEvaluated(
-								"Day 6 TW Core Profile validation spike 無法穩定執行；分類=VALIDATION_SUPPORT_CONFIG；原因=test failure。因此 TW Core validation 維持 NOT_EVALUATED，不冒充 Profile 通過。",
+								"Day 6 TW Core Profile validation spike could not run reliably; category=VALIDATION_SUPPORT_CONFIG; reason=test failure. TW Core validation stays NOT_EVALUATED and is not presented as a Profile pass.",
 								List.of()
 						)
 				)),
@@ -278,8 +278,8 @@ class BundleParseServiceTests {
 		assertThat(result.twCoreValidationResult().status()).isEqualTo(ParseStatus.NOT_EVALUATED);
 		assertThat(result.twCoreValidationResult().message())
 				.contains("VALIDATION_SUPPORT_CONFIG")
-				.contains("維持 NOT_EVALUATED")
-				.contains("不冒充 Profile 通過");
+				.contains("stays NOT_EVALUATED")
+				.contains("not presented as a Profile pass");
 	}
 
 	@Test
@@ -295,7 +295,7 @@ class BundleParseServiceTests {
 				fhirConfig.fhirValidator(fhirContext),
 				new TwCoreValidationService(packageProbe, new StubTwCoreProfileValidator(
 						TwCoreProfileValidationResult.failed(
-								"Day 6 已執行最小 TW Core Profile validation；存在 error/fatal issue。",
+								"Day 6 minimal TW Core Profile validation ran; error/fatal issues were found.",
 								List.of(issue)
 						)
 				)),

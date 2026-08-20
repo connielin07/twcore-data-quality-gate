@@ -53,7 +53,7 @@ public record ValidationResult(
 				null,
 				null,
 				null,
-				TwCoreValidationResult.notEvaluated("尚未執行驗證。"),
+				TwCoreValidationResult.notEvaluated("Validation has not run yet."),
 				GateOutcome.BLOCKED,
 				List.of(),
 				List.of(),

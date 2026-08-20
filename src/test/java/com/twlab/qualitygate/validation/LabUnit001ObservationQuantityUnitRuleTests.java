@@ -39,7 +39,7 @@ class LabUnit001ObservationQuantityUnitRuleTests {
 		assertThat(results.get(0).severity()).isEqualTo("error");
 		assertThat(results.get(0).path()).isEqualTo("Observation/obs-quantity-no-unit.valueQuantity.unit");
 		assertThat(results.get(0).actual()).isEqualTo("N/A");
-		assertThat(results.get(0).suggestion()).contains("合作方可讀的檢驗單位");
+		assertThat(results.get(0).suggestion()).contains("partner-readable lab unit");
 	}
 
 	@Test

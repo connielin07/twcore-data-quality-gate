@@ -64,7 +64,7 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 					actual,
 					EXPECTED,
 					"Observation.valueQuantity.unit is present.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 		return fail(path, actual);
@@ -87,7 +87,7 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 				actual,
 				EXPECTED,
 				"Observation.valueQuantity exists, but unit is missing or blank.",
-				"請補上合作方可讀的檢驗單位，例如 mg/dL；UCUM system/code 會由 LAB-UNIT-002 另行檢查。"
+				"Add a partner-readable lab unit such as mg/dL. UCUM system/code is checked separately by LAB-UNIT-002."
 		);
 	}
 
@@ -100,7 +100,7 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 				actual,
 				EXPECTED,
 				evidence,
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 }

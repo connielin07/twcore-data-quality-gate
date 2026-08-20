@@ -20,7 +20,7 @@ public record TwCorePackageProbeResult(
 		return new TwCorePackageProbeResult(
 				false,
 				"CANONICAL_RESOLUTION",
-				"TW Core package 已載入，但找不到必要 StructureDefinition："
+				"TW Core package was loaded, but required StructureDefinitions were not found: "
 						+ String.join(", ", missingCanonicals),
 				List.copyOf(missingCanonicals)
 		);

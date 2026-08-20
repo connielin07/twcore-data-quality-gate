@@ -71,7 +71,7 @@ public class LabRef002DiagnosticReportResultRule implements ContractRule {
 					actual,
 					"Bundle-local Observation reference using Observation/{id} or entry.fullUrl.",
 					"External HTTP references are outside the MVP reference resolver boundary.",
-					"請改用 Bundle 內 Observation reference，或在後續版本接上外部 FHIR Server 查詢。"
+					"Use a Bundle-local Observation reference, or add external FHIR Server lookup in a later version."
 			);
 		}
 		if (observationReferences.contains(actual)) {
@@ -83,7 +83,7 @@ public class LabRef002DiagnosticReportResultRule implements ContractRule {
 					actual,
 					"DiagnosticReport.result points to an Observation in the same Bundle.",
 					"Matched Bundle Observation by logical reference or fullUrl.",
-					"無需修正。"
+					"No fix needed."
 			);
 		}
 		return fail(path, actual, "DiagnosticReport.result.reference does not match any Observation in this Bundle.");
@@ -98,7 +98,7 @@ public class LabRef002DiagnosticReportResultRule implements ContractRule {
 				actual,
 				"DiagnosticReport.result must point to an Observation in the same Bundle.",
 				evidence,
-				"請確認 DiagnosticReport.result.reference 指向 Bundle.entry 內存在的 Observation。"
+				"Make DiagnosticReport.result.reference point to an existing Observation in Bundle.entry."
 		);
 	}
 
@@ -111,7 +111,7 @@ public class LabRef002DiagnosticReportResultRule implements ContractRule {
 				"N/A",
 				"At least one DiagnosticReport is required to evaluate LAB-REF-002.",
 				"No DiagnosticReport resource found in this Bundle.",
-				"無需修正；此規則不適用。"
+				"No fix needed; this rule does not apply."
 		);
 	}
 
