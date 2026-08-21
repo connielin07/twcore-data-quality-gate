@@ -1,10 +1,11 @@
 services:
   twcore-data-quality-gate:
-    build: .
+    build:
+      context: .
     image: twcore-data-quality-gate:local
     container_name: twcore-data-quality-gate
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     environment:
       JAVA_OPTS: "-XX:MaxRAMPercentage=75"
     restart: unless-stopped

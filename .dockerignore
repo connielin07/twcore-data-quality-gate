@@ -1,6 +1,5 @@
 .git
 .github
-.mvn/wrapper/maven-wrapper.jar
 target
 docs
 *.md
@@ -9,3 +8,4 @@ docs
 HELP.md
 .idea
 .vscode
+*.iml

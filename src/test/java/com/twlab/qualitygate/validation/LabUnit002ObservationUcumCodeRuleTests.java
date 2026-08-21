@@ -17,7 +17,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void passesWhenQuantityHasAllowedUcumSystemAndCode() {
-		List<RuleResult> results = rule.validate(bundle("valid-ucum-code.json"));
+		List<RuleResult> results = rule.validate(bundle("valid-ucum-code.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");
@@ -31,7 +31,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void failsWhenQuantitySystemIsNotUcum() {
-		List<RuleResult> results = rule.validate(bundle("observation-quantity-wrong-ucum-system.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-quantity-wrong-ucum-system.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");
@@ -44,7 +44,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void failsWhenQuantityCodeIsNotAllowedByContract() {
-		List<RuleResult> results = rule.validate(bundle("observation-quantity-ucum-code-not-allowed.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-quantity-ucum-code-not-allowed.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");
@@ -57,7 +57,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void failsWhenQuantityCodeIsMissing() {
-		List<RuleResult> results = rule.validate(bundle("observation-quantity-without-ucum-code.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-quantity-without-ucum-code.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");
@@ -69,7 +69,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void isNotApplicableWhenObservationValueIsNotQuantity() {
-		List<RuleResult> results = rule.validate(bundle("observation-value-string.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-value-string.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");
@@ -81,7 +81,7 @@ class LabUnit002ObservationUcumCodeRuleTests {
 
 	@Test
 	void isNotApplicableWhenBundleHasNoObservation() {
-		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"));
+		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-UNIT-002");

@@ -15,6 +15,10 @@ class ContractScenarioCaseTests {
 
 	private final FhirConfig fhirConfig = new FhirConfig();
 	private final FhirContext fhirContext = FhirContext.forR4Cached();
+	private final ExchangeContractService exchangeContractService = new ExchangeContractService(
+			new ObjectMapper(),
+			contractRules()
+	);
 	private final BundleParseService bundleParseService = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
@@ -23,9 +27,13 @@ class ContractScenarioCaseTests {
 					() -> TwCorePackageProbeResult.loaded("TW Core package loading probe succeeded: test package loaded."),
 					bundle -> TwCoreProfileValidationResult.passed("Test profile validation passed.", List.of())
 			),
-			contractRules()
+			contractRules(),
+			exchangeContractService
 	);
-	private final ContractComparisonService comparisonService = new ContractComparisonService(bundleParseService);
+	private final ContractComparisonService comparisonService = new ContractComparisonService(
+			bundleParseService,
+			exchangeContractService
+	);
 
 	@Test
 	void recordsExpectedGateOutcomeForMinimalScenarioPack() {

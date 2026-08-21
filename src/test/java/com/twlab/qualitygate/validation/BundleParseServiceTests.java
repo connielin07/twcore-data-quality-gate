@@ -21,12 +21,17 @@ class BundleParseServiceTests {
 	private final StubTwCoreProfileValidator profileValidator = new StubTwCoreProfileValidator(
 			TwCoreProfileValidationResult.passed("Day 6 test profile validation passed.", List.of())
 	);
+	private final ExchangeContractService exchangeContractService = new ExchangeContractService(
+			new ObjectMapper(),
+			contractRules()
+	);
 	private final BundleParseService service = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
 			fhirConfig.fhirValidator(fhirContext),
 			new TwCoreValidationService(packageProbe, profileValidator),
-			contractRules()
+			contractRules(),
+			exchangeContractService
 	);
 
 	@Test
@@ -218,7 +223,8 @@ class BundleParseServiceTests {
 								"TW Core package loading probe failed: tw.gov.mohw.twcore#1.0.0 could not be loaded reliably; category=PACKAGE_SOURCE; reason=test failure"
 						)
 				), profileValidator),
-				contractRules()
+				contractRules(),
+				exchangeContractService
 		);
 
 		ValidationResult result = failingService.parse(fixture("valid-minimal-lab-bundle.json"));
@@ -241,7 +247,8 @@ class BundleParseServiceTests {
 				fhirContext,
 				fhirConfig.fhirValidator(fhirContext),
 				new TwCoreValidationService(countingProbe, profileValidator),
-				contractRules()
+				contractRules(),
+				exchangeContractService
 		);
 
 		countingService.parse("{ not-json");
@@ -270,7 +277,8 @@ class BundleParseServiceTests {
 								List.of()
 						)
 				)),
-				contractRules()
+				contractRules(),
+				exchangeContractService
 		);
 
 		ValidationResult result = notEvaluatedService.parse(fixture("valid-minimal-lab-bundle.json"));
@@ -299,7 +307,8 @@ class BundleParseServiceTests {
 								List.of(issue)
 						)
 				)),
-				contractRules()
+				contractRules(),
+				exchangeContractService
 		);
 
 		ValidationResult result = failingProfileService.parse(fixture("valid-minimal-lab-bundle.json"));

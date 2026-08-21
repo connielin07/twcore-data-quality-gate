@@ -52,6 +52,14 @@
       margin-top: 16px;
     }
 
+    .contract-panel {
+      background: #ffffff;
+      border: 1px solid #dfe4ea;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
     .form-title {
       margin: 0 0 16px;
       font-size: 18px;
@@ -77,6 +85,24 @@
     input[type="file"] {
       display: block;
       margin: 8px 0 16px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0 16px;
+    }
+
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .checkbox-row label {
+      margin: 0;
+      font-weight: 700;
     }
 
     button {
@@ -245,10 +271,51 @@
   <h1>TW Lab Contract Gate</h1>
   <p class="subtitle">A quality report for Bundle structure, FHIR R4, TW Core, exchange contract rules, and contract version impact.</p>
 
+  <section class="contract-panel">
+    <h2>Loaded partner contracts</h2>
+    <p class="section-note">
+      This MVP loads bundled contract files from application resources. You may upload a JSON contract for the current validation run.
+    </p>
+    <dl class="meta-grid">
+      <dt>Default validation</dt>
+      <dd th:text="${activeContract != null ? activeContract.displayName() : 'N/A'}">demo-lab-hospital-a#1.1</dd>
+
+      <dt>Current validation</dt>
+      <dd th:text="${selectedContract != null ? selectedContract.displayName() : (activeContract != null ? activeContract.displayName() : 'N/A')}">
+        demo-lab-hospital-a#1.1
+      </dd>
+
+      <dt>Comparison upload</dt>
+      <dd>Upload two or more contract version JSON files, then select Compare contract versions.</dd>
+
+      <dt>Contract upload</dt>
+      <dd>Optional JSON upload for the current validation only. Contract comparison uses the uploaded version files.</dd>
+    </dl>
+  </section>
+
   <form method="post" action="/parse" enctype="multipart/form-data">
     <h2 class="form-title">Input Bundle</h2>
     <label for="bundleFile">Upload Bundle JSON</label>
     <input id="bundleFile" name="bundleFile" type="file" accept=".json,application/json">
+
+    <label for="contractFile">Optional partner contract JSON</label>
+    <input id="contractFile" name="contractFile" type="file" accept=".json,application/json">
+
+    <label for="comparisonContractFiles">Contract versions to compare JSON</label>
+    <input id="comparisonContractFiles"
+           name="comparisonContractFiles"
+           type="file"
+           accept=".json,application/json"
+           multiple>
+
+    <div class="checkbox-row">
+      <input id="compareContractVersions"
+             name="compareContractVersions"
+             type="checkbox"
+             value="true"
+             th:checked="${compareContractVersions}">
+      <label for="compareContractVersions">Compare contract versions</label>
+    </div>
 
     <label for="bundleJson">Or paste JSON</label>
     <textarea id="bundleJson" name="bundleJson" spellcheck="false" th:text="${bundleJson}"></textarea>
@@ -287,6 +354,11 @@
           <dt>TW Core package</dt>
           <dd th:text="${result.twCoreValidationResult.packageId + '#' + result.twCoreValidationResult.packageVersion}">
             tw.gov.mohw.twcore#1.0.0
+          </dd>
+
+          <dt>Exchange contract</dt>
+          <dd th:text="${selectedContract != null ? selectedContract.displayName() : (activeContract != null ? activeContract.displayName() : 'N/A')}">
+            demo-lab-hospital-a#1.1
           </dd>
 
           <dt>Error message</dt>
@@ -429,23 +501,23 @@
         <td>Contract comparison</td>
         <td>
           <span class="status warning"
-                th:if="${comparison.hasGateOutcomeChange() || comparison.hasNewV11RuleFailures()}">
+                th:if="${comparison.hasGateOutcomeChange() || comparison.hasNewRuleFailures()}">
             Impact
           </span>
           <span class="status passed"
-                th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewV11RuleFailures()}">
+                th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewRuleFailures()}">
             No impact
           </span>
         </td>
-        <td th:text="${comparison.v1_1Result.gateOutcome.name() == 'BLOCKED'} ? 'Potentially' : 'No'">Potentially</td>
+        <td th:text="${!comparison.entries.?[result.gateOutcome.name() == 'BLOCKED'].isEmpty()} ? 'Potentially' : 'No'">Potentially</td>
         <td>
-          <span>v1.0 </span><span th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
-          <span> / v1.1 </span><span th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
+          <span th:text="${#lists.size(comparison.entries)}">2</span>
+          <span> uploaded contract versions</span>
         </td>
         <td>
-          <span th:if="${comparison.hasGateOutcomeChange()}">v1.1 changed the gate outcome for this Bundle.</span>
-          <span th:if="${!comparison.hasGateOutcomeChange() && comparison.hasNewV11RuleFailures()}">Same gate outcome, but v1.1 adds new failed exchange rules.</span>
-          <span th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewV11RuleFailures()}">Same gate outcome in both versions; check evidence layers for shared blockers.</span>
+          <span th:if="${comparison.hasGateOutcomeChange()}">At least one uploaded contract version changed the gate outcome for this Bundle.</span>
+          <span th:if="${!comparison.hasGateOutcomeChange() && comparison.hasNewRuleFailures()}">Same gate outcome, but a later uploaded version adds new failed exchange rules.</span>
+          <span th:if="${!comparison.hasGateOutcomeChange() && !comparison.hasNewRuleFailures()}">Same gate outcome across uploaded versions; check evidence layers for shared blockers.</span>
         </td>
       </tr>
       </tbody>
@@ -576,86 +648,58 @@
 
   <section class="result" th:if="${comparison != null}">
     <h2>Contract version comparison</h2>
-    <p class="muted">Runs the same Bundle against contract v1.0 and v1.1 to show version impact.</p>
+    <p class="muted">Runs the same Bundle against the uploaded contract versions in upload order.</p>
     <table>
       <thead>
       <tr>
         <th>Contract version</th>
+        <th>Loaded contract</th>
         <th>Quality Gate</th>
         <th>Failed rule codes</th>
         <th>Blocking reason</th>
       </tr>
       </thead>
       <tbody>
-      <tr>
-        <td>v1.0</td>
+      <tr th:each="entry : ${comparison.entries}">
+        <td th:text="${entry.contract.version}">1.0</td>
+        <td th:text="${entry.contract.displayName()}">demo-lab-hospital-a#1.0</td>
         <td>
           <span class="status"
-                th:classappend="${comparison.v1Result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${comparison.v1Result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
-                th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
+                th:classappend="${entry.result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${entry.result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
+                th:text="${entry.result.gateOutcome}">PASSED</span>
         </td>
         <td>
           <span class="muted"
-                th:if="${comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
+                th:if="${entry.result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
             None
           </span>
-          <span th:each="ruleResult, iter : ${comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL']}">
+          <span th:each="ruleResult, iter : ${entry.result.contractRuleResults.?[outcome.name() == 'FAIL']}">
             <span th:text="${ruleResult.ruleCode}">LAB-REF-001</span><span th:if="${!iter.last}">, </span>
           </span>
         </td>
         <td>
-          <span th:if="${comparison.v1Result.gateOutcome.name() != 'BLOCKED'}">No blocking issue.</span>
-          <span th:if="${comparison.v1Result.jsonStatus.name() == 'FAILED'}">JSON parse failed. </span>
-          <span th:if="${comparison.v1Result.fhirR4Status.name() == 'FAILED'}">FHIR R4 parse failed. </span>
-          <span th:if="${comparison.v1Result.resourceTypeStatus.name() == 'FAILED'}">Resource Type Gate failed. </span>
-          <span th:if="${comparison.v1Result.fhirValidationStatus.name() == 'FAILED'}">FHIR R4 validation failed. </span>
-          <span th:if="${comparison.v1Result.twCoreValidationResult.status.name() == 'FAILED'}">TW Core validation failed. </span>
-          <span th:if="${!comparison.v1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">Exchange contract rule failed.</span>
-        </td>
-      </tr>
-      <tr>
-        <td>v1.1</td>
-        <td>
-          <span class="status"
-                th:classappend="${comparison.v1_1Result.gateOutcome.name() == 'PASSED'} ? ' passed' : (${comparison.v1_1Result.gateOutcome.name() == 'BLOCKED'} ? ' failed' : ' warning')"
-                th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
-        </td>
-        <td>
-          <span class="muted"
-                th:if="${comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
-            None
-          </span>
-          <span th:each="ruleResult, iter : ${comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL']}">
-            <span th:text="${ruleResult.ruleCode}">LAB-UNIT-002</span><span th:if="${!iter.last}">, </span>
-          </span>
-        </td>
-        <td>
-          <span th:if="${comparison.v1_1Result.gateOutcome.name() != 'BLOCKED'}">No blocking issue.</span>
-          <span th:if="${comparison.v1_1Result.jsonStatus.name() == 'FAILED'}">JSON parse failed. </span>
-          <span th:if="${comparison.v1_1Result.fhirR4Status.name() == 'FAILED'}">FHIR R4 parse failed. </span>
-          <span th:if="${comparison.v1_1Result.resourceTypeStatus.name() == 'FAILED'}">Resource Type Gate failed. </span>
-          <span th:if="${comparison.v1_1Result.fhirValidationStatus.name() == 'FAILED'}">FHIR R4 validation failed. </span>
-          <span th:if="${comparison.v1_1Result.twCoreValidationResult.status.name() == 'FAILED'}">TW Core validation failed. </span>
-          <span th:if="${!comparison.v1_1Result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">Exchange contract rule failed.</span>
+          <span th:if="${entry.result.gateOutcome.name() != 'BLOCKED'}">No blocking issue.</span>
+          <span th:if="${entry.result.jsonStatus.name() == 'FAILED'}">JSON parse failed. </span>
+          <span th:if="${entry.result.fhirR4Status.name() == 'FAILED'}">FHIR R4 parse failed. </span>
+          <span th:if="${entry.result.resourceTypeStatus.name() == 'FAILED'}">Resource Type Gate failed. </span>
+          <span th:if="${entry.result.fhirValidationStatus.name() == 'FAILED'}">FHIR R4 validation failed. </span>
+          <span th:if="${entry.result.twCoreValidationResult.status.name() == 'FAILED'}">TW Core validation failed. </span>
+          <span th:if="${!entry.result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">Exchange contract rule failed.</span>
         </td>
       </tr>
       </tbody>
     </table>
 
-    <div th:if="${comparison.hasNewV11RuleFailures()}">
+    <div th:if="${comparison.hasNewRuleFailures()}">
       <h3>Upgrade blocker evidence</h3>
       <p class="muted">
-        This Bundle has new v1.1 exchange rule failures. Gate outcome:
-        v1.0
-        <span th:text="${comparison.v1Result.gateOutcome}">PASSED</span>
-        / v1.1
-        <span th:text="${comparison.v1_1Result.gateOutcome}">BLOCKED</span>
-        . The rules below provide fixable Expected / Actual evidence.
+        Later uploaded contract versions add exchange rule failures compared with the first uploaded contract. The rules below provide fixable Expected / Actual evidence.
       </p>
       <div class="table-scroll">
         <table class="upgrade-evidence-table">
           <thead>
           <tr>
+            <th>Loaded contract</th>
             <th>Rule code</th>
             <th>Path</th>
             <th>Actual</th>
@@ -665,13 +709,14 @@
           </tr>
           </thead>
           <tbody>
-          <tr th:each="ruleResult : ${comparison.newlyFailedV11RuleResults()}">
-            <td th:text="${ruleResult.ruleCode}">LAB-UNIT-002</td>
-            <td th:text="${ruleResult.path}">Observation/obs-1.valueQuantity.system/code</td>
-            <td th:text="${ruleResult.actual}">http://example.org/local-units|mg/dL</td>
-            <td th:text="${ruleResult.expected}">Observation.valueQuantity.system must be http://unitsofmeasure.org.</td>
-            <td th:text="${ruleResult.evidence}">Evidence</td>
-            <td th:text="${ruleResult.suggestion}">Suggestion</td>
+          <tr th:each="delta : ${comparison.newlyFailedRuleResults()}">
+            <td th:text="${delta.contract.displayName()}">demo-lab-hospital-a#1.1</td>
+            <td th:text="${delta.ruleResult.ruleCode}">LAB-UNIT-002</td>
+            <td th:text="${delta.ruleResult.path}">Observation/obs-1.valueQuantity.system/code</td>
+            <td th:text="${delta.ruleResult.actual}">http://example.org/local-units|mg/dL</td>
+            <td th:text="${delta.ruleResult.expected}">Observation.valueQuantity.system must be http://unitsofmeasure.org.</td>
+            <td th:text="${delta.ruleResult.evidence}">Evidence</td>
+            <td th:text="${delta.ruleResult.suggestion}">Suggestion</td>
           </tr>
           </tbody>
         </table>

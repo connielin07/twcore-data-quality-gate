@@ -23,28 +23,31 @@ public class BundleParseService {
 	private final FhirValidator fhirValidator;
 	private final TwCoreValidationService twCoreValidationService;
 	private final List<ContractRule> contractRules;
+	private final ExchangeContractService exchangeContractService;
 
 	public BundleParseService(
 			ObjectMapper objectMapper,
 			FhirContext fhirContext,
 			FhirValidator fhirValidator,
 			TwCoreValidationService twCoreValidationService,
-			List<ContractRule> contractRules
+			List<ContractRule> contractRules,
+			ExchangeContractService exchangeContractService
 	) {
 		this.objectMapper = objectMapper;
 		this.fhirContext = fhirContext;
 		this.fhirValidator = fhirValidator;
 		this.twCoreValidationService = twCoreValidationService;
+		this.exchangeContractService = exchangeContractService;
 		this.contractRules = contractRules.stream()
 				.sorted(Comparator.comparingInt(rule -> ruleOrder().getOrDefault(rule.ruleCode(), Integer.MAX_VALUE)))
 				.toList();
 	}
 
 	public ValidationResult parse(String bundleJson) {
-		return parse(bundleJson, ContractVersion.V1_1);
+		return parse(bundleJson, exchangeContractService.defaultContract());
 	}
 
-	public ValidationResult parse(String bundleJson, ContractVersion contractVersion) {
+	public ValidationResult parse(String bundleJson, ExchangeContract contract) {
 		if (bundleJson == null || bundleJson.isBlank()) {
 			return new ValidationResult(
 					ParseStatus.FAILED,
@@ -107,7 +110,7 @@ public class BundleParseService {
 					.map(BundleEntrySummary::fromEntry)
 					.toList();
 			TwCoreValidationResult twCoreValidationResult = twCoreValidationService.validate(bundle);
-			List<RuleResult> contractRuleResults = validateContractRules(bundle, contractVersion);
+			List<RuleResult> contractRuleResults = validateContractRules(bundle, contract);
 			ParseStatus fhirValidationStatus = hasErrors(validationResult.getMessages())
 					? ParseStatus.FAILED
 					: ParseStatus.PASSED;
@@ -152,10 +155,10 @@ public class BundleParseService {
 		}
 	}
 
-	private List<RuleResult> validateContractRules(Bundle bundle, ContractVersion contractVersion) {
+	private List<RuleResult> validateContractRules(Bundle bundle, ExchangeContract contract) {
 		return contractRules.stream()
-				.filter(rule -> contractVersion.enables(rule.ruleCode()))
-				.flatMap(rule -> rule.validate(bundle).stream())
+				.filter(rule -> contract.enables(rule.ruleCode()))
+				.flatMap(rule -> rule.validate(bundle, contract).stream())
 				.toList();
 	}
 

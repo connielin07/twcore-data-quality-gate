@@ -1,0 +1,15 @@
+{
+  "id": "demo-lab-hospital-a",
+  "name": "Demo Lab to Hospital A Exchange Contract",
+  "version": "1.1",
+  "enabledRuleCodes": [
+    "LAB-REF-001",
+    "LAB-REF-002",
+    "LAB-REF-003",
+    "LAB-CODE-001",
+    "LAB-UNIT-001",
+    "LAB-UNIT-002"
+  ],
+  "allowedLoincCodes": ["2345-7", "718-7"],
+  "allowedUcumCodes": ["mg/dL", "mmol/L"]
+}

@@ -1,7 +1,6 @@
 package com.twlab.qualitygate.validation;
 
 import java.util.List;
-import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Observation;
@@ -12,7 +11,6 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 
 	public static final String RULE_CODE = "LAB-CODE-001";
 	private static final String LOINC_SYSTEM = "http://loinc.org";
-	private static final Set<String> ALLOWED_LOINC_CODES = Set.of("2345-7", "718-7");
 
 	@Override
 	public String ruleCode() {
@@ -20,7 +18,7 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 	}
 
 	@Override
-	public List<RuleResult> validate(Bundle bundle) {
+	public List<RuleResult> validate(Bundle bundle, ExchangeContract contract) {
 		List<Observation> observations = bundle.getEntry().stream()
 				.map(Bundle.BundleEntryComponent::getResource)
 				.filter(Observation.class::isInstance)
@@ -31,14 +29,14 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 		}
 
 		return observations.stream()
-				.map(this::validateObservation)
+				.map(observation -> validateObservation(observation, contract))
 				.toList();
 	}
 
-	private RuleResult validateObservation(Observation observation) {
+	private RuleResult validateObservation(Observation observation, ExchangeContract contract) {
 		String path = "Observation/" + BundleReferenceIndex.idOrUnknown(observation) + ".code.coding";
 		String actual = actualCodingSummary(observation);
-		if (hasAllowedLoincCoding(observation)) {
+		if (hasAllowedLoincCoding(observation, contract)) {
 			return new RuleResult(
 					RULE_CODE,
 					RuleOutcome.PASS,
@@ -46,21 +44,21 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 					path,
 					actual,
 					"Observation.code must include an allowed LOINC coding from the exchange contract.",
-					"Matched allowed LOINC code from the MVP exchange contract.",
+					"Matched allowed LOINC code from exchange contract " + contract.displayName() + ".",
 					"No fix needed."
 			);
 		}
-		return fail(path, actual);
+		return fail(path, actual, contract);
 	}
 
-	private boolean hasAllowedLoincCoding(Observation observation) {
+	private boolean hasAllowedLoincCoding(Observation observation, ExchangeContract contract) {
 		if (!observation.hasCode() || !observation.getCode().hasCoding()) {
 			return false;
 		}
 		return observation.getCode().getCoding().stream()
 				.anyMatch(coding -> LOINC_SYSTEM.equals(coding.getSystem())
 						&& coding.hasCode()
-						&& ALLOWED_LOINC_CODES.contains(coding.getCode()));
+						&& contract.allowedLoincCodes().contains(coding.getCode()));
 	}
 
 	private String actualCodingSummary(Observation observation) {
@@ -81,7 +79,8 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 		return system + "|" + code;
 	}
 
-	private RuleResult fail(String path, String actual) {
+	private RuleResult fail(String path, String actual, ExchangeContract contract) {
+		String allowedCodes = String.join(", ", contract.allowedLoincCodes().stream().sorted().toList());
 		return new RuleResult(
 				RULE_CODE,
 				RuleOutcome.FAIL,
@@ -89,8 +88,10 @@ public class LabCode001ObservationLoincRule implements ContractRule {
 				path,
 				actual,
 				"Observation.code must include an allowed LOINC coding from the exchange contract.",
-				"Observation.code does not include http://loinc.org with one of the allowed codes: 2345-7, 718-7.",
-				"Use a LOINC code allowed by the exchange contract. This MVP allows 2345-7 and 718-7."
+				"Observation.code does not include http://loinc.org with one of the contract-allowed codes: "
+						+ allowedCodes + ".",
+				"Use a LOINC code allowed by the exchange contract " + contract.displayName()
+						+ ". This contract allows " + allowedCodes + "."
 		);
 	}
 

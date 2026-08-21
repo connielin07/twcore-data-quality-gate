@@ -13,11 +13,16 @@ RUN ./mvnw -q package
 FROM eclipse-temurin:17-jre
 
 LABEL org.opencontainers.image.title="TW Lab Contract Gate"
-LABEL org.opencontainers.image.description="Spring Boot quality gate for TW Core lab Bundle validation and exchange contract evidence."
+LABEL org.opencontainers.image.description="Spring Boot quality gate for TW Core lab Bundle validation and partner exchange contract evidence."
+LABEL org.opencontainers.image.source="https://github.com/connielin07/twcore-data-quality-gate"
 
 WORKDIR /app
 
-COPY --from=build /workspace/target/twcore-data-quality-gate-0.0.1-SNAPSHOT.jar app.jar
+RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+
+COPY --from=build --chown=app:app /workspace/target/twcore-data-quality-gate-0.0.1-SNAPSHOT.jar app.jar
+
+USER app
 
 EXPOSE 8080
 

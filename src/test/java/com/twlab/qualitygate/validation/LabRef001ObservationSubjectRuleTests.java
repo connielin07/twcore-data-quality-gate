@@ -17,7 +17,7 @@ class LabRef001ObservationSubjectRuleTests {
 
 	@Test
 	void passesWhenObservationSubjectPointsToBundlePatientById() {
-		List<RuleResult> results = rule.validate(bundle("valid-internal-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("valid-internal-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-001");
@@ -27,7 +27,7 @@ class LabRef001ObservationSubjectRuleTests {
 
 	@Test
 	void failsWhenObservationSubjectPatientIsMissingFromBundle() {
-		List<RuleResult> results = rule.validate(bundle("missing-internal-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("missing-internal-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).outcome()).isEqualTo(RuleOutcome.FAIL);
@@ -38,7 +38,7 @@ class LabRef001ObservationSubjectRuleTests {
 
 	@Test
 	void doesNotEvaluateExternalHttpReference() {
-		List<RuleResult> results = rule.validate(bundle("external-http-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("external-http-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).outcome()).isEqualTo(RuleOutcome.NOT_EVALUATED);
@@ -49,7 +49,7 @@ class LabRef001ObservationSubjectRuleTests {
 
 	@Test
 	void isNotApplicableWhenBundleHasNoObservation() {
-		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"));
+		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-001");

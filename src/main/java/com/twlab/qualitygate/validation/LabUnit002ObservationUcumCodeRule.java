@@ -1,7 +1,6 @@
 package com.twlab.qualitygate.validation;
 
 import java.util.List;
-import java.util.Set;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Quantity;
@@ -13,7 +12,6 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 
 	public static final String RULE_CODE = "LAB-UNIT-002";
 	private static final String UCUM_SYSTEM = "http://unitsofmeasure.org";
-	private static final Set<String> ALLOWED_UCUM_CODES = Set.of("mg/dL", "mmol/L");
 	private static final String EXPECTED = "Observation.valueQuantity.system must be http://unitsofmeasure.org and code must be allowed by the exchange contract.";
 
 	@Override
@@ -22,7 +20,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 	}
 
 	@Override
-	public List<RuleResult> validate(Bundle bundle) {
+	public List<RuleResult> validate(Bundle bundle, ExchangeContract contract) {
 		List<Observation> observations = bundle.getEntry().stream()
 				.map(Bundle.BundleEntryComponent::getResource)
 				.filter(Observation.class::isInstance)
@@ -33,11 +31,11 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 		}
 
 		return observations.stream()
-				.map(this::validateObservation)
+				.map(observation -> validateObservation(observation, contract))
 				.toList();
 	}
 
-	private RuleResult validateObservation(Observation observation) {
+	private RuleResult validateObservation(Observation observation, ExchangeContract contract) {
 		String observationId = BundleReferenceIndex.idOrUnknown(observation);
 		if (!observation.hasValue()) {
 			return notApplicable(
@@ -58,7 +56,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 
 		String path = "Observation/" + observationId + ".valueQuantity.system/code";
 		String actual = actualUcumSummary(quantity);
-		if (hasAllowedUcumSystemAndCode(quantity)) {
+		if (hasAllowedUcumSystemAndCode(quantity, contract)) {
 			return new RuleResult(
 					RULE_CODE,
 					RuleOutcome.PASS,
@@ -66,19 +64,20 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 					path,
 					actual,
 					EXPECTED,
-					"Observation.valueQuantity uses the UCUM system and an allowed unit code from the MVP exchange contract.",
+					"Observation.valueQuantity uses the UCUM system and an allowed unit code from exchange contract "
+							+ contract.displayName() + ".",
 					"No fix needed."
 			);
 		}
-		return fail(path, actual);
+		return fail(path, actual, contract);
 	}
 
-	private boolean hasAllowedUcumSystemAndCode(Quantity quantity) {
+	private boolean hasAllowedUcumSystemAndCode(Quantity quantity, ExchangeContract contract) {
 		return quantity.hasSystem()
 				&& UCUM_SYSTEM.equals(quantity.getSystem())
 				&& quantity.hasCode()
 				&& !quantity.getCode().isBlank()
-				&& ALLOWED_UCUM_CODES.contains(quantity.getCode());
+				&& contract.allowedUcumCodes().contains(quantity.getCode());
 	}
 
 	private String actualUcumSummary(Quantity quantity) {
@@ -87,7 +86,8 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 		return system + "|" + code;
 	}
 
-	private RuleResult fail(String path, String actual) {
+	private RuleResult fail(String path, String actual, ExchangeContract contract) {
+		String allowedCodes = String.join(" or ", contract.allowedUcumCodes().stream().sorted().toList());
 		return new RuleResult(
 				RULE_CODE,
 				RuleOutcome.FAIL,
@@ -97,6 +97,7 @@ public class LabUnit002ObservationUcumCodeRule implements ContractRule {
 				EXPECTED,
 				"Observation.valueQuantity system/code does not match the UCUM policy in the exchange contract.",
 				"Use UCUM conditions allowed by the exchange contract: system must be http://unitsofmeasure.org, and code currently allows mg/dL or mmol/L. This rule is not full UCUM validation and does not parse syntax, convert units, or judge clinical plausibility."
+						.replace("mg/dL or mmol/L", allowedCodes)
 		);
 	}
 

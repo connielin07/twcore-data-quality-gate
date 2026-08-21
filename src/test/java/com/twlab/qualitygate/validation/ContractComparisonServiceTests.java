@@ -15,6 +15,10 @@ class ContractComparisonServiceTests {
 
 	private final FhirConfig fhirConfig = new FhirConfig();
 	private final FhirContext fhirContext = FhirContext.forR4Cached();
+	private final ExchangeContractService exchangeContractService = new ExchangeContractService(
+			new ObjectMapper(),
+			contractRules()
+	);
 	private final BundleParseService bundleParseService = new BundleParseService(
 			new ObjectMapper(),
 			fhirContext,
@@ -23,9 +27,13 @@ class ContractComparisonServiceTests {
 					() -> TwCorePackageProbeResult.loaded("TW Core package loading probe succeeded: test package loaded."),
 					bundle -> TwCoreProfileValidationResult.passed("Test profile validation passed.", List.of())
 			),
-			contractRules()
+			contractRules(),
+			exchangeContractService
 	);
-	private final ContractComparisonService service = new ContractComparisonService(bundleParseService);
+	private final ContractComparisonService service = new ContractComparisonService(
+			bundleParseService,
+			exchangeContractService
+	);
 
 	@Test
 	void comparesV1AndV11WhenV11AddsUcumSystemCodeRequirement() {

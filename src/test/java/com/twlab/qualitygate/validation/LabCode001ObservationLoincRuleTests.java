@@ -17,7 +17,7 @@ class LabCode001ObservationLoincRuleTests {
 
 	@Test
 	void passesWhenObservationHasAllowedLoincCode() {
-		List<RuleResult> results = rule.validate(bundle("valid-loinc-code.json"));
+		List<RuleResult> results = rule.validate(bundle("valid-loinc-code.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-CODE-001");
@@ -31,7 +31,7 @@ class LabCode001ObservationLoincRuleTests {
 
 	@Test
 	void failsWhenObservationLoincCodeIsNotAllowedByContract() {
-		List<RuleResult> results = rule.validate(bundle("loinc-code-not-allowed.json"));
+		List<RuleResult> results = rule.validate(bundle("loinc-code-not-allowed.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-CODE-001");
@@ -44,7 +44,7 @@ class LabCode001ObservationLoincRuleTests {
 
 	@Test
 	void failsWhenObservationCodeHasNoCoding() {
-		List<RuleResult> results = rule.validate(bundle("observation-code-without-coding.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-code-without-coding.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-CODE-001");
@@ -56,7 +56,7 @@ class LabCode001ObservationLoincRuleTests {
 
 	@Test
 	void failsWhenObservationCodingHasNoCode() {
-		List<RuleResult> results = rule.validate(bundle("observation-coding-without-code.json"));
+		List<RuleResult> results = rule.validate(bundle("observation-coding-without-code.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-CODE-001");
@@ -68,7 +68,7 @@ class LabCode001ObservationLoincRuleTests {
 
 	@Test
 	void isNotApplicableWhenBundleHasNoObservation() {
-		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"));
+		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-CODE-001");

@@ -17,7 +17,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void passesWhenDiagnosticReportResultPointsToBundleObservationById() {
-		List<RuleResult> results = rule.validate(bundle("valid-internal-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("valid-internal-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");
@@ -27,7 +27,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void passesWhenDiagnosticReportResultPointsToBundleObservationByFullUrl() {
-		List<RuleResult> results = rule.validate(bundle("valid-report-result-full-url-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("valid-report-result-full-url-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");
@@ -37,7 +37,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void failsWhenDiagnosticReportResultObservationIsMissingFromBundle() {
-		List<RuleResult> results = rule.validate(bundle("missing-report-result-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("missing-report-result-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");
@@ -49,7 +49,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void failsWhenDiagnosticReportHasNoResultReference() {
-		List<RuleResult> results = rule.validate(bundle("missing-report-result-field.json"));
+		List<RuleResult> results = rule.validate(bundle("missing-report-result-field.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");
@@ -61,7 +61,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void doesNotEvaluateExternalHttpReference() {
-		List<RuleResult> results = rule.validate(bundle("external-report-result-reference.json"));
+		List<RuleResult> results = rule.validate(bundle("external-report-result-reference.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");
@@ -73,7 +73,7 @@ class LabRef002DiagnosticReportResultRuleTests {
 
 	@Test
 	void isNotApplicableWhenBundleHasNoDiagnosticReport() {
-		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"));
+		List<RuleResult> results = rule.validate(bundle("unsupported-resource-in-bundle.json"), TestExchangeContracts.DEMO_V11);
 
 		assertThat(results).hasSize(1);
 		assertThat(results.get(0).ruleCode()).isEqualTo("LAB-REF-002");

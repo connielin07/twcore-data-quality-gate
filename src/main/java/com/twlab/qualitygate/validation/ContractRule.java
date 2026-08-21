@@ -7,5 +7,5 @@ public interface ContractRule {
 
 	String ruleCode();
 
-	List<RuleResult> validate(Bundle bundle);
+	List<RuleResult> validate(Bundle bundle, ExchangeContract contract);
 }

@@ -19,7 +19,7 @@ public class LabUnit001ObservationQuantityUnitRule implements ContractRule {
 	}
 
 	@Override
-	public List<RuleResult> validate(Bundle bundle) {
+	public List<RuleResult> validate(Bundle bundle, ExchangeContract contract) {
 		List<Observation> observations = bundle.getEntry().stream()
 				.map(Bundle.BundleEntryComponent::getResource)
 				.filter(Observation.class::isInstance)

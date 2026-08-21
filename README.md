@@ -11,8 +11,10 @@ Spring Boot + HAPI FHIR R4 quality gate for TW Core lab Bundle exchange evidence
 - Run FHIR R4 validation and show OperationOutcome issues.
 - Run TW Core Profile validation when the package can be loaded safely.
 - Run six MVP exchange contract rules.
+- Load bundled partner exchange contract files for rule activation and allowed LOINC/UCUM values.
+- Optionally upload a partner contract JSON for the current validation run.
 - Show `PASS`, `FAIL`, `NOT_APPLICABLE`, and `NOT_EVALUATED` rule evidence.
-- Compare contract v1.0 and v1.1 impact.
+- Optionally compare contract v1.0 and v1.1 impact.
 - Render an English-first `Quality Test Report` on the homepage.
 
 Not included in the MVP:
@@ -22,6 +24,28 @@ Not included in the MVP:
 - Unit conversion or clinical plausibility checks.
 - Change Manifest or compatibility classification.
 - Persistent history.
+
+## Partner Exchange Contracts
+
+The rule engine is implemented in Java, but partner-specific policy is loaded from bundled contract files:
+
+- `src/main/resources/contracts/demo-lab-v1.0.json`
+- `src/main/resources/contracts/demo-lab-v1.1.json`
+
+These files define:
+
+- contract id, name, and version
+- enabled exchange rule codes
+- allowed LOINC codes
+- allowed UCUM codes
+
+The default validation uses `demo-lab-hospital-a#1.1`.
+
+Users may upload a contract JSON for the current validation run. The uploaded contract is checked for required metadata and known rule codes.
+
+When `Compare contract versions` is selected, users must upload two or more contract version JSON files. The app runs the same Bundle against those uploaded contract versions in upload order; the first uploaded contract is the baseline for upgrade blocker evidence.
+
+This is still an MVP demo contract workflow. It is not a TW Core official rule set, not a full terminology service, and not full contract schema validation.
 
 ## Run Locally
 
@@ -93,7 +117,7 @@ DOCKER_CONFIG=/tmp/twcore-docker-config docker build -t twcore-data-quality-gate
 Current expected result:
 
 ```text
-Tests run: 60, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 ## CI

@@ -20,7 +20,7 @@ public class LabRef003ReportObservationPatientRule implements ContractRule {
 	}
 
 	@Override
-	public List<RuleResult> validate(Bundle bundle) {
+	public List<RuleResult> validate(Bundle bundle, ExchangeContract contract) {
 		List<DiagnosticReport> reports = bundle.getEntry().stream()
 				.map(Bundle.BundleEntryComponent::getResource)
 				.filter(DiagnosticReport.class::isInstance)
