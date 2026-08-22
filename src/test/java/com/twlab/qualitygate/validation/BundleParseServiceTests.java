@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class BundleParseServiceTests {
@@ -95,6 +96,22 @@ class BundleParseServiceTests {
 				.anySatisfy(ruleResult -> {
 					assertThat(ruleResult.ruleCode()).isEqualTo(LabUnit002ObservationUcumCodeRule.RULE_CODE);
 					assertThat(ruleResult.outcome()).isEqualTo(RuleOutcome.FAIL);
+				});
+	}
+
+	@Test
+	void treatsShouldPolicyFailuresAsWarningsWithoutBlockingExchange() {
+		ValidationResult result = service.parse(
+				fixture("observation-quantity-wrong-ucum-system.json"),
+				shouldWarningContract(LabUnit002ObservationUcumCodeRule.RULE_CODE)
+		);
+
+		assertThat(result.gateOutcome()).isEqualTo(GateOutcome.PASS_WITH_WARNINGS);
+		assertThat(result.contractRuleResults())
+				.anySatisfy(ruleResult -> {
+					assertThat(ruleResult.ruleCode()).isEqualTo(LabUnit002ObservationUcumCodeRule.RULE_CODE);
+					assertThat(ruleResult.outcome()).isEqualTo(RuleOutcome.FAIL);
+					assertThat(ruleResult.severity()).isEqualTo("warning");
 				});
 	}
 
@@ -358,6 +375,40 @@ class BundleParseServiceTests {
 				new LabCode001ObservationLoincRule(),
 				new LabUnit001ObservationQuantityUnitRule(),
 				new LabUnit002ObservationUcumCodeRule()
+		);
+	}
+
+	private ExchangeContract shouldWarningContract(String ruleCode) {
+		return new ExchangeContract(
+				"demo-lab-hospital-a",
+				"Demo Lab to Hospital A Exchange Contract",
+				"1.1-warning",
+				"active",
+				"Demo Lab Integration Office",
+				"TW",
+				"2026-08-21",
+				null,
+				"4.0.1",
+				List.of(new ExchangeContract.PolicyAssertion(
+						ruleCode,
+						"demo-lab-hospital-a companion guide section 3.3",
+						"Observation.valueQuantity.system SHOULD be UCUM and code SHOULD be allowed by this exchange scenario.",
+						"SHOULD",
+						"warning",
+						true
+				)),
+				new ExchangeContract.TerminologyPolicy(
+						"http://loinc.org",
+						"2.78",
+						"https://example.org/fhir/ValueSet/demo-lab-hospital-a-lab-codes|1.1-warning",
+						"http://unitsofmeasure.org",
+						"2.1",
+						"https://example.org/fhir/ValueSet/demo-lab-hospital-a-lab-units|1.1-warning",
+						"2026-08-21T00:00:00+08:00",
+						"Test local expansion snapshot."
+				),
+				Set.of("2345-7", "718-7"),
+				Set.of("mg/dL", "mmol/L")
 		);
 	}
 

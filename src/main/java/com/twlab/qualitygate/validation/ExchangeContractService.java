@@ -79,10 +79,17 @@ public class ExchangeContractService {
 		requireText(contract.id(), "id", contract);
 		requireText(contract.name(), "name", contract);
 		requireText(contract.version(), "version", contract);
-		if (contract.enabledRuleCodes().isEmpty()) {
-			throw new IllegalStateException("Exchange contract has no enabledRuleCodes: " + contract.displayName());
+		requireText(contract.status(), "status", contract);
+		requireText(contract.publisher(), "publisher", contract);
+		requireText(contract.jurisdiction(), "jurisdiction", contract);
+		requireText(contract.effectiveDate(), "effectiveDate", contract);
+		requireText(contract.fhirVersion(), "fhirVersion", contract);
+		if (contract.enabledPolicyAssertionIds().isEmpty()) {
+			throw new IllegalStateException("Exchange contract has no enabled policyAssertions: " + contract.displayName());
 		}
-		List<String> unknownRuleCodes = contract.enabledRuleCodes().stream()
+		validateTerminologyPolicy(contract);
+		contract.policyAssertions().forEach(assertion -> validatePolicyAssertion(assertion, contract));
+		List<String> unknownRuleCodes = contract.enabledPolicyAssertionIds().stream()
 				.filter(ruleCode -> !knownRuleCodes.contains(ruleCode))
 				.sorted()
 				.toList();
@@ -91,6 +98,37 @@ public class ExchangeContractService {
 					"Exchange contract " + contract.displayName() + " references unknown rule codes: " + unknownRuleCodes
 			);
 		}
+	}
+
+	private void validatePolicyAssertion(ExchangeContract.PolicyAssertion assertion, ExchangeContract contract) {
+		if (assertion == null) {
+			throw new IllegalStateException("Exchange contract contains a null policyAssertion: " + contract.displayName());
+		}
+		requireText(assertion.id(), "policyAssertions.id", contract);
+		requireText(assertion.source(), "policyAssertions.source", contract);
+		requireText(assertion.requirement(), "policyAssertions.requirement", contract);
+		requireText(assertion.obligation(), "policyAssertions.obligation", contract);
+		requireText(assertion.severity(), "policyAssertions.severity", contract);
+		if (!List.of("SHALL", "SHOULD", "MAY").contains(assertion.obligation())) {
+			throw new IllegalStateException("Exchange contract " + contract.displayName()
+					+ " has unsupported policyAssertions.obligation: " + assertion.obligation());
+		}
+		if (!List.of("fatal", "error", "warning", "information").contains(assertion.severity())) {
+			throw new IllegalStateException("Exchange contract " + contract.displayName()
+					+ " has unsupported policyAssertions.severity: " + assertion.severity());
+		}
+	}
+
+	private void validateTerminologyPolicy(ExchangeContract contract) {
+		ExchangeContract.TerminologyPolicy policy = contract.terminologyPolicy();
+		if (policy == null) {
+			throw new IllegalStateException("Exchange contract missing terminologyPolicy: " + contract.displayName());
+		}
+		requireText(policy.loincSystem(), "terminologyPolicy.loincSystem", contract);
+		requireText(policy.loincValueSetCanonical(), "terminologyPolicy.loincValueSetCanonical", contract);
+		requireText(policy.ucumSystem(), "terminologyPolicy.ucumSystem", contract);
+		requireText(policy.ucumValueSetCanonical(), "terminologyPolicy.ucumValueSetCanonical", contract);
+		requireText(policy.expansionTimestamp(), "terminologyPolicy.expansionTimestamp", contract);
 	}
 
 	private void requireText(String value, String field, ExchangeContract contract) {

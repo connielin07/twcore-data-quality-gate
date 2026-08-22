@@ -127,7 +127,8 @@ public class BundleParseService {
 							ParseStatus.PASSED,
 							fhirValidationStatus,
 							twCoreValidationResult,
-							contractRuleResults
+							contractRuleResults,
+							contract
 					),
 					issues,
 					contractRuleResults,
@@ -159,7 +160,21 @@ public class BundleParseService {
 		return contractRules.stream()
 				.filter(rule -> contract.enables(rule.ruleCode()))
 				.flatMap(rule -> rule.validate(bundle, contract).stream())
+				.map(result -> withContractSeverity(result, contract))
 				.toList();
+	}
+
+	private RuleResult withContractSeverity(RuleResult result, ExchangeContract contract) {
+		return new RuleResult(
+				result.ruleCode(),
+				result.outcome(),
+				contract.severityFor(result.ruleCode(), result.severity()),
+				result.path(),
+				result.actual(),
+				result.expected(),
+				result.evidence(),
+				result.suggestion()
+		);
 	}
 
 	private GateOutcome gateOutcome(
@@ -168,18 +183,21 @@ public class BundleParseService {
 			ParseStatus resourceTypeStatus,
 			ParseStatus fhirValidationStatus,
 			TwCoreValidationResult twCoreValidationResult,
-			List<RuleResult> contractRuleResults
+			List<RuleResult> contractRuleResults,
+			ExchangeContract contract
 	) {
 		if (jsonStatus == ParseStatus.FAILED
 				|| fhirR4Status == ParseStatus.FAILED
 				|| resourceTypeStatus == ParseStatus.FAILED
 				|| fhirValidationStatus == ParseStatus.FAILED
 				|| twCoreValidationResult.status() == ParseStatus.FAILED
-				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.FAIL)) {
+				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.FAIL
+						&& contract.blocksExchange(result.ruleCode()))) {
 			return GateOutcome.BLOCKED;
 		}
 		if (twCoreValidationResult.status() == ParseStatus.NOT_EVALUATED
-				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.NOT_EVALUATED)) {
+				|| contractRuleResults.stream().anyMatch(result -> result.outcome() == RuleOutcome.NOT_EVALUATED
+						|| result.outcome() == RuleOutcome.FAIL)) {
 			return GateOutcome.PASS_WITH_WARNINGS;
 		}
 		return GateOutcome.PASSED;

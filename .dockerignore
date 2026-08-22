@@ -1,11 +1,11 @@
 .git
 .github
-target
-docs
-*.md
-*.log
-.DS_Store
-HELP.md
 .idea
 .vscode
+target
 *.iml
+*.log
+.DS_Store
+docs/journal
+docs/references
+README.md

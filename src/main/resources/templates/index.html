@@ -285,6 +285,19 @@
         demo-lab-hospital-a#1.1
       </dd>
 
+      <dt>Contract lifecycle</dt>
+      <dd>
+        <span th:text="${selectedContract != null ? selectedContract.status() : 'N/A'}">active</span>
+        <span> from </span>
+        <span th:text="${selectedContract != null ? selectedContract.effectiveDate() : 'N/A'}">2026-08-21</span>
+      </dd>
+
+      <dt>Publisher</dt>
+      <dd th:text="${selectedContract != null ? selectedContract.publisher() : 'N/A'}">Demo Lab Integration Office</dd>
+
+      <dt>FHIR version</dt>
+      <dd th:text="${selectedContract != null ? selectedContract.fhirVersion() : 'N/A'}">4.0.1</dd>
+
       <dt>Comparison upload</dt>
       <dd>Upload two or more contract version JSON files, then select Compare contract versions.</dd>
 
@@ -336,7 +349,7 @@
           At least one blocking condition was found. Check Blocking and rule evidence below.
         </p>
         <p class="muted" th:if="${result.gateOutcome.name() == 'PASS_WITH_WARNINGS'}">
-          No blocking issue was found, but at least one layer was not fully evaluated.
+          No blocking issue was found, but at least one layer was not fully evaluated or a non-blocking policy failed.
         </p>
         <p class="muted" th:if="${result.gateOutcome.name() == 'PASSED'}">
           No blocking issue was found in the MVP validation layers or exchange contract rules.
@@ -359,6 +372,17 @@
           <dt>Exchange contract</dt>
           <dd th:text="${selectedContract != null ? selectedContract.displayName() : (activeContract != null ? activeContract.displayName() : 'N/A')}">
             demo-lab-hospital-a#1.1
+          </dd>
+
+          <dt>Contract status</dt>
+          <dd th:text="${selectedContract != null ? selectedContract.status() : 'N/A'}">active</dd>
+
+          <dt>Contract effective date</dt>
+          <dd th:text="${selectedContract != null ? selectedContract.effectiveDate() : 'N/A'}">2026-08-21</dd>
+
+          <dt>Terminology snapshot</dt>
+          <dd th:text="${selectedContract != null && selectedContract.terminologyPolicy() != null ? selectedContract.terminologyPolicy().expansionTimestamp() : 'N/A'}">
+            2026-08-21T00:00:00+08:00
           </dd>
 
           <dt>Error message</dt>
@@ -461,11 +485,11 @@
         <td>Exchange contract rules</td>
         <td>
           <span class="status failed"
-                th:if="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()}">
+                th:if="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL' && (severity == 'error' || severity == 'fatal')].isEmpty()}">
             FAILED
           </span>
           <span class="status warning"
-                th:if="${!#lists.isEmpty(result.contractRuleResults) && result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty() && !result.contractRuleResults.?[outcome.name() == 'NOT_EVALUATED'].isEmpty()}">
+                th:if="${!#lists.isEmpty(result.contractRuleResults) && result.contractRuleResults.?[outcome.name() == 'FAIL' && (severity == 'error' || severity == 'fatal')].isEmpty() && (!result.contractRuleResults.?[outcome.name() == 'NOT_EVALUATED'].isEmpty() || !result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty())}">
             PASS_WITH_WARNINGS
           </span>
           <span class="status passed"
@@ -477,14 +501,14 @@
             NOT_EVALUATED
           </span>
         </td>
-        <td th:text="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL'].isEmpty()} ? 'Yes' : 'No'">No</td>
+        <td th:text="${!#lists.isEmpty(result.contractRuleResults) && !result.contractRuleResults.?[outcome.name() == 'FAIL' && (severity == 'error' || severity == 'fatal')].isEmpty()} ? 'Yes' : 'No'">No</td>
         <td>
           <span th:text="${#lists.size(result.contractRuleResults)}">6</span>
           <span> rule results, </span>
           <span th:text="${#lists.size(result.contractRuleResults.?[outcome.name() == 'FAIL'])}">0</span>
           <span> failed</span>
         </td>
-        <td>Six MVP exchange contract rules with Expected / Actual evidence.</td>
+        <td>SHALL/error failures block; SHOULD/MAY warning failures remain warnings.</td>
       </tr>
       <tr>
         <td>Quality Gate</td>

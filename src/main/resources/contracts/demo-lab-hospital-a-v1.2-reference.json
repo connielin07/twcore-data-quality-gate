@@ -1,0 +1,121 @@
+{
+  "id": "demo-lab-hospital-a",
+  "name": "Demo Lab to Hospital A Exchange Contract",
+  "version": "1.2-reference",
+  "status": "draft",
+  "publisher": "Demo Lab Integration Office",
+  "jurisdiction": "TW",
+  "effectiveDate": "2026-09-01",
+  "retireDate": null,
+  "fhirVersion": "4.0.1",
+  "basis": {
+    "description": "Reference-only specimen showing how the MVP contract maps to real FHIR exchange artifacts. This file is not loaded by the default validation flow.",
+    "officialValidator": "https://validator.fhir.org/",
+    "fhirValidationDocumentation": "https://hl7.org/fhir/R4/validation.html",
+    "twCoreValidationGuide": "https://twcore.mohw.gov.tw/ig/twcore/validates.html"
+  },
+  "partner": {
+    "sender": "Demo Lab",
+    "receiver": "Hospital A",
+    "agreementType": "companion-guide-style pre-exchange quality gate",
+    "environment": "demo"
+  },
+  "scenario": {
+    "name": "Lab result Bundle submission",
+    "payload": "FHIR R4 collection Bundle containing Patient, Observation, and DiagnosticReport resources",
+    "qualityGateDecision": "Block outbound exchange when FHIR, TW Core, or enabled partner contract rules fail."
+  },
+  "fhirVersion": "4.0.1",
+  "implementationGuides": [
+    {
+      "packageId": "tw.gov.mohw.twcore",
+      "version": "1.0.0",
+      "canonical": "https://twcore.mohw.gov.tw/ig/twcore/ImplementationGuide/tw.gov.mohw.twcore",
+      "role": "Taiwan profile conformity baseline"
+    }
+  ],
+  "capabilityStatement": {
+    "role": "not implemented in the current Bundle-only MVP",
+    "futureUse": "Describe partner API formats, supported profiles, operations, and implementation guides when validating a live FHIR endpoint."
+  },
+  "policyAssertions": [
+    {
+      "id": "LAB-REF-001",
+      "source": "demo-lab-hospital-a companion guide section 2.1",
+      "requirement": "Each Observation.subject reference SHALL resolve to a Patient in the submitted Bundle.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    },
+    {
+      "id": "LAB-REF-002",
+      "source": "demo-lab-hospital-a companion guide section 2.2",
+      "requirement": "Each DiagnosticReport.result reference SHALL resolve to an Observation in the submitted Bundle.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    },
+    {
+      "id": "LAB-REF-003",
+      "source": "demo-lab-hospital-a companion guide section 2.3",
+      "requirement": "DiagnosticReport.subject and referenced Observation.subject SHALL identify the same Patient.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    },
+    {
+      "id": "LAB-CODE-001",
+      "source": "demo-lab-hospital-a companion guide section 3.1",
+      "requirement": "Observation.code SHALL include a LOINC coding allowed by this exchange scenario.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    },
+    {
+      "id": "LAB-UNIT-001",
+      "source": "demo-lab-hospital-a companion guide section 3.2",
+      "requirement": "Quantity Observations SHALL include a displayable unit.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    },
+    {
+      "id": "LAB-UNIT-002",
+      "source": "demo-lab-hospital-a companion guide section 3.3",
+      "requirement": "Observation.valueQuantity.system SHALL be UCUM and code SHALL be allowed by this exchange scenario.",
+      "obligation": "SHALL",
+      "severity": "error",
+      "enabled": true
+    }
+  ],
+  "terminologyPolicy": {
+    "loincSystem": "http://loinc.org",
+    "loincVersion": "2.78",
+    "loincValueSetCanonical": "https://example.org/fhir/ValueSet/demo-lab-hospital-a-lab-codes|1.2-reference",
+    "ucumSystem": "http://unitsofmeasure.org",
+    "ucumVersion": "2.1",
+    "ucumValueSetCanonical": "https://example.org/fhir/ValueSet/demo-lab-hospital-a-lab-units|1.2-reference",
+    "expansionTimestamp": "2026-09-01T00:00:00+08:00",
+    "scope": "Allowed subsets for this demo lab exchange scenario only. This is not a terminology server."
+  },
+  "allowedLoincCodes": ["2345-7", "718-7"],
+  "allowedUcumCodes": ["mg/dL", "mmol/L"],
+  "references": [
+    {
+      "label": "HL7 FHIR R4 Validation",
+      "url": "https://hl7.org/fhir/R4/validation.html"
+    },
+    {
+      "label": "FHIR ImplementationGuide",
+      "url": "https://www.hl7.org/fhir/implementationguide.html"
+    },
+    {
+      "label": "FHIR CapabilityStatement",
+      "url": "https://hl7.org/fhir/capabilitystatement.html"
+    },
+    {
+      "label": "Da Vinci Payer Data Exchange",
+      "url": "https://hl7.org/fhir/us/davinci-pdex/"
+    }
+  ]
+}

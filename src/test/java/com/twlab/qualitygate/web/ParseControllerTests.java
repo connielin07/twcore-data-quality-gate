@@ -205,14 +205,72 @@ class ParseControllerTests {
 						  "id": "demo-lab-hospital-b",
 						  "name": "Demo Lab to Hospital B Exchange Contract",
 						  "version": "1.1",
-						  "enabledRuleCodes": [
-						    "LAB-REF-001",
-						    "LAB-REF-002",
-						    "LAB-REF-003",
-						    "LAB-CODE-001",
-						    "LAB-UNIT-001",
-						    "LAB-UNIT-002"
+						  "status": "active",
+						  "publisher": "Demo Lab Integration Office",
+						  "jurisdiction": "TW",
+						  "effectiveDate": "2026-08-21",
+						  "retireDate": null,
+						  "fhirVersion": "4.0.1",
+						  "policyAssertions": [
+						    {
+						      "id": "LAB-REF-001",
+						      "source": "hospital-b companion guide",
+						      "requirement": "Observation.subject SHALL resolve locally.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    },
+						    {
+						      "id": "LAB-REF-002",
+						      "source": "hospital-b companion guide",
+						      "requirement": "DiagnosticReport.result SHALL resolve locally.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    },
+						    {
+						      "id": "LAB-REF-003",
+						      "source": "hospital-b companion guide",
+						      "requirement": "Report and Observation subjects SHALL match.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    },
+						    {
+						      "id": "LAB-CODE-001",
+						      "source": "hospital-b companion guide",
+						      "requirement": "Observation.code SHALL use an allowed LOINC code.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    },
+						    {
+						      "id": "LAB-UNIT-001",
+						      "source": "hospital-b companion guide",
+						      "requirement": "Quantity Observations SHALL include a unit.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    },
+						    {
+						      "id": "LAB-UNIT-002",
+						      "source": "hospital-b companion guide",
+						      "requirement": "Quantity Observations SHALL use an allowed UCUM code.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    }
 						  ],
+						  "terminologyPolicy": {
+						    "loincSystem": "http://loinc.org",
+						    "loincVersion": "2.78",
+						    "loincValueSetCanonical": "https://example.org/fhir/ValueSet/demo-lab-hospital-b-lab-codes|1.1",
+						    "ucumSystem": "http://unitsofmeasure.org",
+						    "ucumVersion": "2.1",
+						    "ucumValueSetCanonical": "https://example.org/fhir/ValueSet/demo-lab-hospital-b-lab-units|1.1",
+						    "expansionTimestamp": "2026-08-21T00:00:00+08:00",
+						    "scope": "Test local expansion snapshot."
+						  },
 						  "allowedLoincCodes": ["2345-7", "718-7"],
 						  "allowedUcumCodes": ["g/L"]
 						}
@@ -241,7 +299,32 @@ class ParseControllerTests {
 						  "id": "bad-contract",
 						  "name": "Bad Contract",
 						  "version": "1.0",
-						  "enabledRuleCodes": ["LAB-UNKNOWN"],
+						  "status": "active",
+						  "publisher": "Demo Lab Integration Office",
+						  "jurisdiction": "TW",
+						  "effectiveDate": "2026-08-21",
+						  "retireDate": null,
+						  "fhirVersion": "4.0.1",
+						  "policyAssertions": [
+						    {
+						      "id": "LAB-UNKNOWN",
+						      "source": "bad companion guide",
+						      "requirement": "Unknown policy assertion.",
+						      "obligation": "SHALL",
+						      "severity": "error",
+						      "enabled": true
+						    }
+						  ],
+						  "terminologyPolicy": {
+						    "loincSystem": "http://loinc.org",
+						    "loincVersion": "2.78",
+						    "loincValueSetCanonical": "https://example.org/fhir/ValueSet/bad-lab-codes|1.0",
+						    "ucumSystem": "http://unitsofmeasure.org",
+						    "ucumVersion": "2.1",
+						    "ucumValueSetCanonical": "https://example.org/fhir/ValueSet/bad-lab-units|1.0",
+						    "expansionTimestamp": "2026-08-21T00:00:00+08:00",
+						    "scope": "Test local expansion snapshot."
+						  },
 						  "allowedLoincCodes": ["2345-7"],
 						  "allowedUcumCodes": ["mg/dL"]
 						}
